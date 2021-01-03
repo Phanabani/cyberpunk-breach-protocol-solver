@@ -2,8 +2,8 @@ package cyberpunk_decryption;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Deque;
-import java.util.Stack;
 
 class SolutionNode {
   public int x;
@@ -180,6 +180,51 @@ public class Solver {
     for (SolutionNode s : solution) {
       System.out.println(String.format("%H (%d, %d)", s.value, s.x, s.y));
     }
-  }
 
+    SolutionNode[] solutionSorted = solution.clone();
+    Arrays.sort(solutionSorted, (SolutionNode a, SolutionNode b) -> {
+      if (a.y != b.y)
+        return Integer.compare(a.y, b.y);
+      return Integer.compare(a.x, b.x);
+    });
+
+    int width = data.getWidth();
+    int height = data.getHeight();
+    int lastX = -1;
+    int lastY = 0;
+    for (SolutionNode s : solutionSorted) {
+
+      if (s.y > lastY) {
+        for (int i = lastX; i < width - 1; i++)
+          // Print the row's remaining empty cells
+          System.out.print("-- ");
+
+        System.out.println();
+
+        for (int i = lastY; i < s.y - 1; i++) {
+          // Print fully empty lines
+          for (int j = 0; j < width; j++)
+            System.out.print("-- ");
+          System.out.println();
+        }
+
+        lastX = -1;
+      }
+
+      if (s.x > lastX) {
+        // Print preceding empty cells
+        for (int i = lastX; i < s.x - 1; i++)
+          System.out.print("-- ");
+      }
+
+      lastY = s.y;
+      lastX = s.x;
+      System.out.print(String.format("%H ", s.value));
+    }
+
+    for (int i=lastY; i<height-1; i++)
+      System.out.println();
+      for (int j = 0; j < width; j++)
+        System.out.print("-- ");
+  }
 }
