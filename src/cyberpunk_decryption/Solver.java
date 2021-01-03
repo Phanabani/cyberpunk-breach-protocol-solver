@@ -129,65 +129,42 @@ public class Solver {
       // It's impossible to finish this sequence without overflowing the buffer
       return false;
 
+    int width = data.getWidth();
+    int height = data.getHeight();
     boolean horizontal = bufferIndex % 2 == 0;
 
-    if (horizontal) {
-      for (
-          int x = data.findInRow(rowOrCol, sequence[seqIndex], 0);
-          x != -1 && x < data.getWidth();
-          x = data.findInRow(rowOrCol, sequence[seqIndex], x+1)
-      ) {
-        // Iterate through all instances of value in this row
-        if (seqIndex == sequence.length - 1) {
-          // We reached the end of the sequence and found everything.
-          // Add to the solution stack and collapse back up the call stack.
-          deque.push(new SolutionNode(x, rowOrCol, sequence[seqIndex]));
-          return true;
-        } else if (solveRecursive(deque, sequence, bufferIndex+1, seqIndex+1, x)) {
-          // We searched recursively and found everything.
-          // Add to the solution stack and collapse up.
-          deque.push(new SolutionNode(x, rowOrCol, sequence[seqIndex]));
-          return true;
-        }
-      }
-
-      for (int x = 0; x < data.getWidth(); x++) {
-        // We didn't find anything in this row, so just use cells in this row
-        // as a bridge to get to the right value
-        // Do NOT increment seqIndex because we didn't actually find the value here
-        if (solveRecursive(deque, sequence, bufferIndex+1, seqIndex, x)) {
-          deque.push(new SolutionNode(x, rowOrCol, data.get(x, rowOrCol)));
-          return true;
-        }
+    for (
+        int i = horizontal
+            ? data.findInRow(rowOrCol, sequence[seqIndex], 0)
+            : data.findInColumn(rowOrCol, sequence[seqIndex], 0);
+        i != -1 && i < data.getWidth();
+        i = horizontal
+            ? data.findInRow(rowOrCol, sequence[seqIndex], i+1)
+            : data.findInColumn(rowOrCol, sequence[seqIndex], i+1)
+    ) {
+      // Iterate through all instances of value in this row or col
+      if (seqIndex == sequence.length - 1
+          || solveRecursive(deque, sequence, bufferIndex + 1, seqIndex + 1, i)) {
+        // We reached the end of the sequence and found everything.
+        // Add to the solution stack and collapse back up the call stack.
+        if (horizontal)
+          deque.push(new SolutionNode(i, rowOrCol, sequence[seqIndex]));
+        else
+          deque.push(new SolutionNode(rowOrCol, i, sequence[seqIndex]));
+        return true;
       }
     }
 
-    else {  // vertical
-      for (
-          int y = data.findInColumn(rowOrCol, sequence[seqIndex], 0);
-          y != -1 && y < data.getHeight();
-          y = data.findInColumn(rowOrCol, sequence[seqIndex], y+1)
-      ) {
-        // Iterate through all instances of value in this column
-        if (seqIndex == sequence.length - 1) {
-          // We reached the end of the sequence and found everything.
-          // Add to the solution stack and collapse back up the call stack.
-          deque.push(new SolutionNode(rowOrCol, y, sequence[seqIndex]));
-          return true;
-        } else if (solveRecursive(deque, sequence, bufferIndex+1, seqIndex+1, y)) {
-          // We searched recursively and found everything.
-          // Add to the solution stack and collapse up.
-          deque.push(new SolutionNode(rowOrCol, y, sequence[seqIndex]));
-          return true;
-        }
-      }
-
-      for (int y = 0; y < data.getHeight(); y++) {
-        // We didn't find anything in this col, so just use cells in this col
-        // as a bridge to get to the right value
+    if (bufferIndex == 0) {
+      for (int i = 0; i < (horizontal ? width : height); i++) {
+        // We didn't find anything in this row/col, so just use its cells as a
+        // bridge to get to the right value.
         // Do NOT increment seqIndex because we didn't actually find the value here
-        if (solveRecursive(deque, sequence, bufferIndex+1, seqIndex, y)) {
-          deque.push(new SolutionNode(rowOrCol, y, data.get(rowOrCol, y)));
+        if (solveRecursive(deque, sequence, bufferIndex + 1, seqIndex, i)) {
+          if (horizontal)
+            deque.push(new SolutionNode(i, rowOrCol, data.get(i, rowOrCol)));
+          else
+            deque.push(new SolutionNode(rowOrCol, i, data.get(rowOrCol, i)));
           return true;
         }
       }
