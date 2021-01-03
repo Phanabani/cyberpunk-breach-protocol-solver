@@ -190,43 +190,20 @@ public class Solver {
       return Integer.compare(a.x, b.x);
     });
 
+    int nextIdx = 0;
+    SolutionNode next = solutionSorted[0];
     int width = data.getWidth();
     int height = data.getHeight();
-    int lastX = -1;
-    int lastY = 0;
-    for (SolutionNode s : solutionSorted) {
-
-      if (s.y > lastY) {
-        for (int i = lastX; i < width - 1; i++)
-          // Print the row's remaining empty cells
+    for (int y=0; y<height; y++) {
+      for (int x=0; x<width; x++) {
+        if (next != null && next.x == x && next.y == y) {
+          System.out.print(String.format("%H ", next.value));
+          next = nextIdx < solution.length - 1 ? solutionSorted[++nextIdx] : null;
+        } else {
           System.out.print("-- ");
-
-        System.out.println();
-
-        for (int i = lastY; i < s.y - 1; i++) {
-          // Print fully empty lines
-          for (int j = 0; j < width; j++)
-            System.out.print("-- ");
-          System.out.println();
         }
-
-        lastX = -1;
       }
-
-      if (s.x > lastX) {
-        // Print preceding empty cells
-        for (int i = lastX; i < s.x - 1; i++)
-          System.out.print("-- ");
-      }
-
-      lastY = s.y;
-      lastX = s.x;
-      System.out.print(String.format("%H ", s.value));
-    }
-
-    for (int i=lastY; i<height-1; i++)
       System.out.println();
-      for (int j = 0; j < width; j++)
-        System.out.print("-- ");
+    }
   }
 }
