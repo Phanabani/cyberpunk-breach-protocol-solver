@@ -1,4 +1,4 @@
-package cyberpunk_decryption;
+package com.github.hawkpath.cyberpunk_breach_solver;
 
 public class Main {
 
@@ -18,7 +18,7 @@ public class Main {
         "1c bd e9"
     };
 
-    Solver solver = new Solver(data, sequences, 5);
+    Solver solver = new Solver(data, new String[]{"e9 1c bd e9"}, 6);
     solver.solve();
     solver.print();
   }

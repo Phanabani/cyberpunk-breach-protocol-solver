@@ -1,4 +1,4 @@
-package cyberpunk_decryption;
+package com.github.hawkpath.cyberpunk_breach_solver;
 
 import java.util.*;
 
