@@ -90,6 +90,10 @@ public class Solver {
     this(parseHex(data), parseHex(sequences), bufferSize);
   }
 
+  public GridNode[] getSolution() {
+    return solution;
+  }
+
   private static Integer[][] parseHex(String hex) {
     ArrayList<Integer[]> lines = new ArrayList<>();
     for (String hexLine : hex.split("\n")) {
