@@ -1,39 +1,43 @@
 package cyberpunk_decryption;
 
-import java.util.ArrayDeque;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Deque;
+import java.util.*;
 
-class SolutionNode {
+class GridNode {
   public int x;
   public int y;
-  public int value;
+  public Integer value;
 
-  public SolutionNode(int x, int y, int value) {
+  public GridNode(int x, int y, Integer value) {
     this.x = x;
     this.y = y;
     this.value = value;
   }
 }
 
-class Array2D<T> {
+class Grid2D {
 
-  private T[][] data;
+  private GridNode[][] data;
   private int width;
   private int height;
 
-  public Array2D(T[][] data) {
-    this.data = data;
+  public Grid2D(Integer[][] data) {
     width = data[0].length;
     height = data.length;
+    this.data = new GridNode[height][];
 
-    for (int i=1; i<data.length; i++) {
-      assert data[i].length == data[i-1].length : "Rows must be of equal length";
+    int lastRowLen = data[0].length;
+    for (int y=0; y<data.length; y++) {
+      assert data[y].length == lastRowLen : "Rows must be of equal length";
+      lastRowLen = data[y].length;
+
+      this.data[y] = new GridNode[width];
+      for (int x=0; x<data[y].length; x++) {
+        this.data[y][x] = new GridNode(x, y, data[y][x]);
+      }
     }
   }
 
-  public T get(int x, int y) throws IndexOutOfBoundsException {
+  public GridNode get(int x, int y) throws IndexOutOfBoundsException {
     return data[y][x];
   }
 
@@ -45,33 +49,35 @@ class Array2D<T> {
     return height;
   }
 
-  public int findInRow(int row, T value, int start) {
+  public GridNode findInRow(int row, int value, int start) {
     for (int i=start; i<width; i++) {
-      if (get(i, row).equals(value))
-        return i;
+      GridNode node = get(i, row);
+      if (node.value.equals(value))
+        return node;
     }
-    return -1;
+    return null;
   }
 
-  public int findInColumn(int col, T value, int start) {
+  public GridNode findInColumn(int col, int value, int start) {
     for (int i=start; i<height; i++) {
-      if (get(col, i).equals(value))
-        return i;
+      GridNode node = get(col, i);
+      if (node.value.equals(value))
+        return node;
     }
-    return -1;
+    return null;
   }
 
 }
 
 public class Solver {
 
-  private Array2D<Integer> data;
+  private Grid2D data;
   private Integer[][] sequences;
   private int bufferSize;
-  private SolutionNode[] solution = null;
+  private GridNode[] solution = null;
 
   public Solver(Integer[][] data, Integer[][] sequences, int bufferSize) {
-    this.data = new Array2D<>(data);
+    this.data = new Grid2D(data);
     this.sequences = sequences;
     this.bufferSize = bufferSize;
   }
@@ -115,19 +121,19 @@ public class Solver {
     // We can join sequences end to end, optionally merging first/last elements.
     // Search orientation (vertical/horizontal) alternates each element.
     // This is a recursive problem.
-    ArrayDeque<SolutionNode> stack = new ArrayDeque<>();
+    ArrayDeque<GridNode> stack = new ArrayDeque<>(bufferSize);
     Integer[] seq = sequences[sequences.length - 1];
     boolean solved = solveRecursive(stack, seq);
-    solution = solved ? stack.toArray(new SolutionNode[0]) : null;
+    solution = solved ? stack.toArray(new GridNode[0]) : null;
   }
 
-  private boolean solveRecursive(Deque<SolutionNode> stack, Integer[] sequence) {
-    return solveRecursive(stack, sequence, 0, 0, 0, -1);
+  private boolean solveRecursive(Deque<GridNode> stack, Integer[] sequence) {
+    return solveRecursive(stack, sequence, 0, 0, null);
   }
 
   private boolean solveRecursive(
-      Deque<SolutionNode> stack, Integer[] sequence,
-      int bufferIndex, int seqIndex, int rowOrCol, int lastColOrRow
+      Deque<GridNode> deque, Integer[] sequence, int bufferIndex, int seqIndex,
+      GridNode lastNode
   ) {
     if (sequence.length - seqIndex + bufferIndex > bufferSize)
       // It's impossible to finish this sequence without overflowing the buffer
@@ -136,45 +142,49 @@ public class Solver {
     int width = data.getWidth();
     int height = data.getHeight();
     boolean horizontal = bufferIndex % 2 == 0;
+    if (lastNode == null)
+      lastNode = new GridNode(0, 0, 0);
 
     for (
-        int i = horizontal
-            ? data.findInRow(rowOrCol, sequence[seqIndex], 0)
-            : data.findInColumn(rowOrCol, sequence[seqIndex], 0);
-        i != -1 && i < data.getWidth();
-        i = horizontal
-            ? data.findInRow(rowOrCol, sequence[seqIndex], i+1)
-            : data.findInColumn(rowOrCol, sequence[seqIndex], i+1)
+        GridNode node = horizontal
+            ? data.findInRow(lastNode.y, sequence[seqIndex], 0)
+            : data.findInColumn(lastNode.x, sequence[seqIndex], 0);
+        node != null;
+        node = horizontal
+            ? data.findInRow(lastNode.y, sequence[seqIndex], node.x + 1)
+            : data.findInColumn(lastNode.x, sequence[seqIndex], node.y + 1)
     ) {
       // Iterate through all instances of value in this row or col
-      if (i == lastColOrRow)
-        // This is the same element we just found one call up the stack;
-        // skip it
+      if (deque.contains(node))
+        // Already used this node; skip!
         continue;
+      deque.addLast(node);
       if (seqIndex == sequence.length - 1
-          || solveRecursive(stack, sequence, bufferIndex + 1, seqIndex + 1, i, rowOrCol)) {
+          || solveRecursive(deque, sequence, bufferIndex + 1, seqIndex + 1, node)) {
         // We reached the end of the sequence and found everything.
-        // Add to the solution stack and collapse back up the call stack.
-        if (horizontal)
-          stack.push(new SolutionNode(i, rowOrCol, sequence[seqIndex]));
-        else
-          stack.push(new SolutionNode(rowOrCol, i, sequence[seqIndex]));
+        // Collapse back up the call stack.
         return true;
       }
+      deque.removeLast();
     }
 
     if (bufferIndex == 0) {
-      for (int i = 0; i < (horizontal ? width : height); i++) {
+      for (
+          GridNode node = horizontal
+              ? data.get(0, lastNode.y)
+              : data.get(lastNode.x, 0);
+          horizontal ? node.x < width - 1 : node.y < height - 1;
+          node = horizontal
+              ? data.get(node.x + 1, lastNode.y)
+              : data.get(lastNode.x, node.y + 1)
+      ) {
         // We didn't find anything in this row/col, so just use its cells as a
         // bridge to get to the right value.
         // Do NOT increment seqIndex because we didn't actually find the value here
-        if (solveRecursive(stack, sequence, bufferIndex + 1, seqIndex, i, rowOrCol)) {
-          if (horizontal)
-            stack.push(new SolutionNode(i, rowOrCol, data.get(i, rowOrCol)));
-          else
-            stack.push(new SolutionNode(rowOrCol, i, data.get(rowOrCol, i)));
+        deque.addLast(node);
+        if (solveRecursive(deque, sequence, bufferIndex + 1, seqIndex, node))
           return true;
-        }
+        deque.removeLast();
       }
     }
 
@@ -187,19 +197,19 @@ public class Solver {
       return;
     }
 
-    for (SolutionNode s : solution) {
+    for (GridNode s : solution) {
       System.out.println(String.format("%H (%d, %d)", s.value, s.x, s.y));
     }
 
-    SolutionNode[] solutionSorted = solution.clone();
-    Arrays.sort(solutionSorted, (SolutionNode a, SolutionNode b) -> {
+    GridNode[] solutionSorted = solution.clone();
+    Arrays.sort(solutionSorted, (GridNode a, GridNode b) -> {
       if (a.y != b.y)
         return Integer.compare(a.y, b.y);
       return Integer.compare(a.x, b.x);
     });
 
     int nextIdx = 0;
-    SolutionNode next = solutionSorted[0];
+    GridNode next = solutionSorted[0];
     int width = data.getWidth();
     int height = data.getHeight();
     for (int y=0; y<height; y++) {
