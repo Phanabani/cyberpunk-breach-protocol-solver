@@ -1,6 +1,9 @@
 package com.github.hawkpath.cyberpunk_breach_solver;
 
-import java.awt.image.*;
+import java.awt.image.BufferedImage;
+import java.awt.image.ColorModel;
+import java.awt.image.DataBufferInt;
+import java.awt.image.WritableRaster;
 
 public class ImageProcessing {
 
