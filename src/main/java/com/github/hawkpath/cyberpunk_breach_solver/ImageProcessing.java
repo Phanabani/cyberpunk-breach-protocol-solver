@@ -1,9 +1,15 @@
 package com.github.hawkpath.cyberpunk_breach_solver;
 
-import java.awt.image.BufferedImage;
-import java.awt.image.DataBufferInt;
+import java.awt.image.*;
 
 public class ImageProcessing {
+
+  public static BufferedImage copy(BufferedImage img) {
+    ColorModel cm = img.getColorModel();
+    boolean isAlphaPremultiplied = cm.isAlphaPremultiplied();
+    WritableRaster raster = img.copyData(null);
+    return new BufferedImage(cm, raster, isAlphaPremultiplied, null);
+  }
 
   public static void threshold(BufferedImage img, int threshold) {
     int[] pixels = ((DataBufferInt)img.getRaster().getDataBuffer()).getData();
