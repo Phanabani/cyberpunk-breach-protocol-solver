@@ -1,14 +1,18 @@
 package com.github.hawkpath.cyberpunk_breach_solver;
 
 import com.sun.jna.Native;
-import com.sun.jna.platform.win32.*;
+import com.sun.jna.platform.win32.User32;
+import com.sun.jna.platform.win32.WinDef;
 import com.sun.jna.platform.win32.WinDef.HWND;
+import com.sun.jna.platform.win32.WinUser;
 
-import java.awt.*;
-import java.awt.geom.*;
 import javax.swing.*;
+import java.awt.*;
+import java.util.ArrayList;
 
 public class Overlay extends JFrame {
+
+  private OverlayComponent overlayComponent;
 
   public Overlay() {
     super("Cyberpunk Breach Solver");
@@ -23,8 +27,10 @@ public class Overlay extends JFrame {
     setAlwaysOnTop(true);
     setUndecorated(true);
     setBackground(new Color(0,0,0,0));
+    setOpacity(0.95f);
 
-    add(new OverlayComponent());
+    overlayComponent = new OverlayComponent();
+    add(overlayComponent);
   }
 
   @Override
@@ -52,12 +58,18 @@ public class Overlay extends JFrame {
     return hwnd;
   }
 
+  public void setRegions(ArrayList<Rectangle> regions) {
+    overlayComponent.regions = regions;
+    overlayComponent.repaint();
+  }
+
 }
 
 class OverlayComponent extends JComponent {
 
   static final Color lineColor = new Color(0xff0000);
   private GridNode[] solution = null;
+  protected ArrayList<Rectangle> regions;
 
   public void setSolution(GridNode[] solution) {
     this.solution = solution;
@@ -68,6 +80,8 @@ class OverlayComponent extends JComponent {
     super.paintComponent(g0);
     // if (solution == null)
     //   return;
+    if (regions == null)
+      return;
 
     Graphics2D g = (Graphics2D) g0.create();
     g.setRenderingHint(
@@ -76,11 +90,13 @@ class OverlayComponent extends JComponent {
     );
     g.setColor(lineColor);
     g.setStroke(new BasicStroke(
-        10, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND
+        4, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND
     ));
 
-    g.draw(new Line2D.Float(500, 500, 500, 1000));
-    g.draw(new Line2D.Float(500, 1000, 1000, 500));
+    for (Rectangle r : regions) {
+      g.drawRect(r.x, r.y, r.width, r.height);
+    }
+
     g.dispose();
   }
 
