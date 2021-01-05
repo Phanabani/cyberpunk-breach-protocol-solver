@@ -74,7 +74,7 @@ public class Solver {
   private Grid2D data;
   private Integer[][] sequences;
   private int bufferSize;
-  private GridNode[] solution = null;
+  private ArrayList<GridNode> solution = null;
 
   public Solver(Integer[][] data, Integer[][] sequences, int bufferSize) {
     this.data = new Grid2D(data);
@@ -90,7 +90,7 @@ public class Solver {
     this(parseHex(data), parseHex(sequences), bufferSize);
   }
 
-  public GridNode[] getSolution() {
+  public ArrayList<GridNode> getSolution() {
     return solution;
   }
 
@@ -128,7 +128,7 @@ public class Solver {
     ArrayDeque<GridNode> stack = new ArrayDeque<>(bufferSize);
     Integer[] seq = sequences[sequences.length - 1];
     boolean solved = solveRecursive(stack, seq);
-    solution = solved ? stack.toArray(new GridNode[0]) : null;
+    solution = solved ? new ArrayList<>(stack) : null;
   }
 
   private boolean solveRecursive(Deque<GridNode> stack, Integer[] sequence) {
@@ -205,22 +205,22 @@ public class Solver {
       System.out.println(String.format("%H (%d, %d)", s.value, s.x, s.y));
     }
 
-    GridNode[] solutionSorted = solution.clone();
-    Arrays.sort(solutionSorted, (GridNode a, GridNode b) -> {
+    ArrayList<GridNode> solutionSorted = new ArrayList<>(solution);
+    solutionSorted.sort((GridNode a, GridNode b) -> {
       if (a.y != b.y)
         return Integer.compare(a.y, b.y);
       return Integer.compare(a.x, b.x);
     });
 
     int nextIdx = 0;
-    GridNode next = solutionSorted[0];
+    GridNode next = solutionSorted.get(0);
     int width = data.getWidth();
     int height = data.getHeight();
     for (int y=0; y<height; y++) {
       for (int x=0; x<width; x++) {
         if (next != null && next.x == x && next.y == y) {
           System.out.print(String.format("%H ", next.value));
-          next = nextIdx < solution.length - 1 ? solutionSorted[++nextIdx] : null;
+          next = nextIdx < solution.size() - 1 ? solutionSorted.get(++nextIdx) : null;
         } else {
           System.out.print("-- ");
         }
