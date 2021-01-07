@@ -25,8 +25,8 @@ class Grid2D {
     height = data.length;
     this.data = new GridNode[height][];
 
-    int lastRowLen = data[0].length;
-    for (int y=0; y<data.length; y++) {
+    int lastRowLen = width;
+    for (int y=0; y<height; y++) {
       assert data[y].length == lastRowLen : "Rows must be of equal length";
       lastRowLen = data[y].length;
 
@@ -77,45 +77,18 @@ public class Solver {
   private ArrayList<GridNode> solution = null;
 
   public Solver(Integer[][] data, Integer[][] sequences, int bufferSize) {
+    setAll(data, sequences, bufferSize);
+  }
+
+  public void setAll(Integer[][] data, Integer[][] sequences, int bufferSize) {
     this.data = new Grid2D(data);
     this.sequences = sequences;
     this.bufferSize = bufferSize;
-  }
-
-  public Solver(String data, String sequences, int bufferSize) {
-    this(parseHex(data), parseHex(sequences), bufferSize);
-  }
-
-  public Solver(String[] data, String[] sequences, int bufferSize) {
-    this(parseHex(data), parseHex(sequences), bufferSize);
+    solution = null;
   }
 
   public ArrayList<GridNode> getSolution() {
     return solution;
-  }
-
-  private static Integer[][] parseHex(String hex) {
-    ArrayList<Integer[]> lines = new ArrayList<>();
-    for (String hexLine : hex.split("\n")) {
-      lines.add(parseHexLine(hexLine));
-    }
-    return lines.toArray(new Integer[0][0]);
-  }
-
-  private static Integer[][] parseHex(String[] hexLines) {
-    ArrayList<Integer[]> lines = new ArrayList<>();
-    for (String hexLine : hexLines) {
-      lines.add(parseHexLine(hexLine));
-    }
-    return lines.toArray(new Integer[0][0]);
-  }
-
-  private static Integer[] parseHexLine(String hexLine) {
-    ArrayList<Integer> line = new ArrayList<>();
-    for (String b : hexLine.split(" ")) {
-      line.add(Integer.parseInt(b, 16));
-    }
-    return line.toArray(new Integer[0]);
   }
 
   public void solve() {
@@ -126,7 +99,7 @@ public class Solver {
     // Search orientation (vertical/horizontal) alternates each element.
     // This is a recursive problem.
     ArrayDeque<GridNode> stack = new ArrayDeque<>(bufferSize);
-    Integer[] seq = sequences[sequences.length - 1];
+    Integer[] seq = sequences[0];
     boolean solved = solveRecursive(stack, seq);
     solution = solved ? new ArrayList<>(stack) : null;
   }
