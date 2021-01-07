@@ -63,25 +63,27 @@ public class Overlay extends JFrame {
     overlayComponent.repaint();
   }
 
+  public void setSolution(ArrayList<GridNode> solution, int matrixWidth) {
+    overlayComponent.solution = solution;
+    overlayComponent.matrixWidth = matrixWidth;
+    overlayComponent.repaint();
+  }
+
 }
 
 class OverlayComponent extends JComponent {
 
   static final Color lineColor = new Color(0xff0000);
-  private GridNode[] solution = null;
-  protected ArrayList<Rectangle> regions;
-
-  public void setSolution(GridNode[] solution) {
-    this.solution = solution;
-  }
+  protected ArrayList<Rectangle> regions = null;
+  protected ArrayList<GridNode> solution = null;
+  protected int matrixWidth = -1;
 
   @Override
   public void paintComponent(Graphics g0) {
     super.paintComponent(g0);
-    // if (solution == null)
-    //   return;
-    if (regions == null)
+    if (solution == null || regions == null || matrixWidth == -1) {
       return;
+    }
 
     Graphics2D g = (Graphics2D) g0.create();
     g.setRenderingHint(
@@ -93,7 +95,9 @@ class OverlayComponent extends JComponent {
         4, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND
     ));
 
-    for (Rectangle r : regions) {
+    Rectangle r;
+    for (GridNode s : solution) {
+      r = regions.get(s.y * matrixWidth + s.x);
       g.drawRect(r.x, r.y, r.width, r.height);
     }
 
