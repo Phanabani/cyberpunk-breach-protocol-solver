@@ -78,15 +78,15 @@ public class Detector {
   }
 
   private DetectionResult doOCR(BufferedImage img) {
+    ImageProcessing.threshold(img, THRESHOLD);
+    ImageProcessing.invert(img);
     try {
-      ImageProcessing.threshold(img, THRESHOLD);
-      ImageProcessing.invert(img);
       String text = tess.doOCR(img);
       ArrayList<Rectangle> regions = (ArrayList<Rectangle>) tess.getSegmentedRegions(
           img, ITessAPI.TessPageIteratorLevel.RIL_WORD
       );
       return new DetectionResult(parseText(text), regions);
-    } catch (TesseractException e) {
+    } catch (NullPointerException | TesseractException e) {
       return null;
     }
   }
