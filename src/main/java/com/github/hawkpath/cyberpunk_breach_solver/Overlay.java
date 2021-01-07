@@ -36,7 +36,8 @@ public class Overlay extends JFrame {
   @Override
   public void setVisible(boolean b) {
     super.setVisible(b);
-    setTransparent(this);
+    if (b)
+      setTransparent(this);
   }
 
   /**
@@ -69,14 +70,29 @@ public class Overlay extends JFrame {
     overlayComponent.repaint();
   }
 
+  public void clearSolution() {
+    setSolution(null, -1);
+  }
+
 }
 
 class OverlayComponent extends JComponent {
 
-  static final Color lineColor = new Color(0xff0000);
+  static final Color lineColor = new Color(0x54FFE7);
+  static final int boxPadding = 10;
+  static final Stroke stroke = new BasicStroke(
+      6, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND
+  );
   protected ArrayList<Rectangle> regions = null;
   protected ArrayList<GridNode> solution = null;
   protected int matrixWidth = -1;
+
+  private Rectangle getRegion(GridNode node) {
+    int index = node.y * matrixWidth + node.x;
+    if (index < regions.size())
+      return regions.get(index);
+    return null;
+  }
 
   @Override
   public void paintComponent(Graphics g0) {
@@ -91,14 +107,51 @@ class OverlayComponent extends JComponent {
         RenderingHints.VALUE_ANTIALIAS_ON
     );
     g.setColor(lineColor);
-    g.setStroke(new BasicStroke(
-        4, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND
-    ));
+    g.setStroke(stroke);
 
-    Rectangle r;
-    for (GridNode s : solution) {
-      r = regions.get(s.y * matrixWidth + s.x);
-      g.drawRect(r.x, r.y, r.width, r.height);
+    GridNode s, sNext;
+    Rectangle r, rNext;
+    int x1, y1, x2, y2;
+    for (int i=0; i<solution.size(); i++) {
+      s = solution.get(i);
+      r = getRegion(s);
+      assert r != null : "Region out of bounds. Matrix width is possibly wrong";
+
+      g.drawRoundRect(
+          r.x - boxPadding, r.y - boxPadding,
+          r.width + 2*boxPadding, r.height + 2*boxPadding,
+          4, 4
+      );
+
+      if (i < solution.size() - 1) {
+        // Draw line to next solution
+        sNext = solution.get(i + 1);
+        rNext = getRegion(sNext);
+        assert rNext != null : "Region out of bounds. Matrix width is possibly wrong";
+
+        if (s.x != sNext.x) {
+          // Horizontal
+          if (s.x < sNext.x) {
+            x1 = r.x + r.width + boxPadding;
+            x2 = rNext.x - boxPadding;
+          } else {
+            x1 = rNext.x + rNext.width + boxPadding;
+            x2 = r.x - boxPadding;
+          }
+          y1 = y2 = r.y + r.height/2;
+        } else {
+          // Vertical
+          if (s.y < sNext.y) {
+            y1 = r.y + r.height + boxPadding;
+            y2 = rNext.y - boxPadding;
+          } else {
+            y1 = rNext.y + rNext.height + boxPadding;
+            y2 = r.y - boxPadding;
+          }
+          x1 = x2 = r.x + r.width/2;
+        }
+        g.drawLine(x1, y1, x2, y2);
+      }
     }
 
     g.dispose();
