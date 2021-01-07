@@ -71,10 +71,12 @@ class Grid2D {
 
 public class Solver {
 
-  private Grid2D data;
-  private Integer[][] sequences;
-  private int bufferSize;
+  private Grid2D data = null;
+  private Integer[][] sequences = null;
+  private int bufferSize = -1;
   private ArrayList<GridNode> solution = null;
+
+  public Solver() {}
 
   public Solver(Integer[][] data, Integer[][] sequences, int bufferSize) {
     setAll(data, sequences, bufferSize);
@@ -92,12 +94,8 @@ public class Solver {
   }
 
   public void solve() {
-    // Organize a list of possible sequence solutions.
-    // The last sequence should be guaranteed, and work down to lower priority
-    // sequences.
-    // We can join sequences end to end, optionally merging first/last elements.
-    // Search orientation (vertical/horizontal) alternates each element.
-    // This is a recursive problem.
+    if (data == null || sequences == null || bufferSize == -1)
+      return;
     ArrayDeque<GridNode> stack = new ArrayDeque<>(bufferSize);
     Integer[] seq = sequences[0];
     boolean solved = solveRecursive(stack, seq);
