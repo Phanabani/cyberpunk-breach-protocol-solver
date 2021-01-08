@@ -143,7 +143,10 @@ public class Solver {
       deque.removeLast();
     }
 
-    if (bufferIndex == 0) {
+    if (seqIndex == 0 && bufferIndex + sequence.length < bufferSize) {
+      // We didn't find anything in this row/col, so just use its cells as a
+      // bridge to get to the right value.
+      // Do NOT increment seqIndex because we didn't actually find the value here
       for (
           GridNode node = horizontal
               ? data.get(0, lastNode.y)
@@ -153,9 +156,9 @@ public class Solver {
               ? data.get(node.x + 1, lastNode.y)
               : data.get(lastNode.x, node.y + 1)
       ) {
-        // We didn't find anything in this row/col, so just use its cells as a
-        // bridge to get to the right value.
-        // Do NOT increment seqIndex because we didn't actually find the value here
+        if (bufferIndex != 0 && node == lastNode)
+          // Skip the node we just were on
+          continue;
         deque.addLast(node);
         if (solveRecursive(deque, sequence, bufferIndex + 1, seqIndex, node))
           return true;
