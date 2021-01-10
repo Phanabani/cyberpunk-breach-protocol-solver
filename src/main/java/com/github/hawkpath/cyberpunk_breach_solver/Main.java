@@ -71,13 +71,12 @@ public class Main implements NativeKeyListener {
     System.out.printf("Buffer size: %d\n\n", detection.bufferSize);
 
     Integer[][] matrixArr = Utils.tryGet2DSubarray(detection.matrix.values);
-    Integer[][] sequencesArr = Utils.toJaggedArray(detection.sequences.values);
-    if (matrixArr == null || sequencesArr == null) {
+    if (matrixArr == null) {
       overlay.clearSolution();
       return;
     }
 
-    solver.setAll(matrixArr, sequencesArr, 8);
+    solver.setAll(matrixArr, detection.sequences.values, detection.bufferSize);
     solver.solve();
     ArrayList<GridNode> solution = solver.getSolution();
     if (solution == null) {

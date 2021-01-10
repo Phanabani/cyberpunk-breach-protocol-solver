@@ -40,6 +40,11 @@
             <artifactId>jnativehook</artifactId>
             <version>2.1.0</version>
         </dependency>
+        <dependency>
+            <groupId>com.github.dakusui</groupId>
+            <artifactId>combinatoradix</artifactId>
+            <version>0.8.2</version>
+        </dependency>
     </dependencies>
 
     <build>

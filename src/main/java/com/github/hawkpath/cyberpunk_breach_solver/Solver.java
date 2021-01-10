@@ -1,5 +1,9 @@
 package com.github.hawkpath.cyberpunk_breach_solver;
 
+import com.github.dakusui.combinatoradix.Combinator;
+import com.github.dakusui.combinatoradix.Permutator;
+import static com.github.dakusui.combinatoradix.Utils.nCk;
+
 import java.util.*;
 
 class GridNode {
@@ -69,22 +73,114 @@ class Grid2D {
 
 }
 
+class SequencePermutator implements Iterable<List<List<Integer>>> {
+  /*
+   * We're assuming that the sequences are ordered in ascending priority
+   *
+   * Get all permutations of:
+   * 1234
+   * 123
+   * 124
+   * 134
+   * 12
+   * 13
+   * 14
+   * 1
+   * 234
+   * 23
+   * 24
+   * 2
+   * 34
+   * 3
+   * 4
+   */
+
+  private List<? extends List<Integer>> sequences;
+  private int maxBufferSize;
+  private List<List<List<Integer>>> permutations;
+
+  public SequencePermutator(List<? extends List<Integer>> sequences, int maxBufferSize) {
+    Collections.reverse(sequences);
+    this.sequences = sequences;
+    this.maxBufferSize = maxBufferSize;
+    generatePermutations();
+  }
+
+  @Override
+  public Iterator<List<List<Integer>>> iterator() {
+    return permutations.iterator();
+  }
+
+  private static int totalLength(List<List<Integer>> list) {
+    int total = 0;
+    for (List<Integer> row : list) {
+      total += row.size();
+    }
+    return total;
+  }
+
+  private static long rowsWithItemInFirstPosition(long total, long select, long index) {
+    try {
+      return nCk(total - index - 1, select - 1);
+    } catch (ArithmeticException e) {
+      return 0;
+    }
+  }
+
+  private void generatePermutations() {
+    int total = sequences.size();
+    Combinator<List<Integer>> combinator;
+    Permutator<List<Integer>> permutator;
+    List<List<List<Integer>>> permutations = new ArrayList<>();
+    int[] startPositions = new int[total];
+
+    for (int element=0; element<total; element++) {
+      // Iterate through each element in the list. We want to get all combinations
+      // with this element in the first position, then the next element, etc.
+
+      for (int select=total; select>=1; select--) {
+        // Iterate from largest combinations to smallest
+        combinator = new Combinator<>(sequences, select);
+        // Get the index where this element first shows up as the first element,
+        // get the number of times it appears in the first position, and add
+        // this number of times to the start index for the next element with this
+        // value of `select`.
+        long startPos = startPositions[select-1];
+        long elementCount = rowsWithItemInFirstPosition(total, select, element);
+        startPositions[select-1] += elementCount;
+
+        for (long i=startPos; i<startPos+elementCount; i++) {
+          // Iterate through each combination with this element in the first position
+          permutator = new Permutator<>(combinator.get(i), select);
+
+          for (List<List<Integer>> permutation : permutator) {
+            // Iterate through each permutation of this combination
+            if (totalLength(permutation) <= maxBufferSize)
+              permutations.add(permutation);
+          }
+        }
+      }
+    }
+    this.permutations = permutations;
+  }
+}
+
 public class Solver {
 
   private Grid2D data = null;
-  private Integer[][] sequences = null;
+  private SequencePermutator sequencePermutator = null;
   private int bufferSize = -1;
   private ArrayList<GridNode> solution = null;
 
   public Solver() {}
 
-  public Solver(Integer[][] data, Integer[][] sequences, int bufferSize) {
+  public Solver(Integer[][] data, List<List<Integer>> sequences, int bufferSize) {
     setAll(data, sequences, bufferSize);
   }
 
-  public void setAll(Integer[][] data, Integer[][] sequences, int bufferSize) {
+  public void setAll(Integer[][] data, List<? extends List<Integer>> sequences, int bufferSize) {
     this.data = new Grid2D(data);
-    this.sequences = sequences;
+    this.sequencePermutator = new SequencePermutator(sequences, bufferSize);
     this.bufferSize = bufferSize;
     solution = null;
   }
@@ -94,12 +190,16 @@ public class Solver {
   }
 
   public void solve() {
-    if (data == null || sequences == null || bufferSize == -1)
+    if (data == null || sequencePermutator == null || bufferSize == -1)
       return;
+    solution = null;
     ArrayDeque<GridNode> stack = new ArrayDeque<>(bufferSize);
-    Integer[] seq = sequences[0];
-    boolean solved = solveRecursive(stack, seq);
-    solution = solved ? new ArrayList<>(stack) : null;
+    for (List<List<Integer>> sequences : sequencePermutator) {
+      if (solveRecursive(stack, sequences)) {
+        solution = new ArrayList<>(stack);
+        break;
+      }
+    }
   }
 
   private boolean solveRecursive(Deque<GridNode> stack, Integer[] sequence) {
