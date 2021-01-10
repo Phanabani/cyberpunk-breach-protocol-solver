@@ -46,11 +46,23 @@ public class ColorHSV {
     value = newValue;
   }
 
-  public static ColorHSV RGBtoHSV(Color rgb) {
+  public static ColorHSV fromRGB(int rgb) {
+    int r = (0xFF_00_00 & rgb) >> 16;
+    int g = (0x00_FF_00 & rgb) >> 8;
+    int b = (0x00_00_FF & rgb);
+    return fromRGB(r, g, b);
+  }
+
+  public static ColorHSV fromRGB(Color rgb) {
+    return fromRGB(rgb.getRed(), rgb.getGreen(), rgb.getBlue());
+  }
+
+  @SuppressWarnings("UnnecessaryLocalVariable")
+  public static ColorHSV fromRGB(int r, int g, int b) {
     // https://www.rapidtables.com/convert/color/rgb-to-hsv.html
-    float R = (float)rgb.getRed();
-    float G = (float)rgb.getGreen();
-    float B = (float)rgb.getBlue();
+    float R = r;
+    float G = g;
+    float B = b;
     float Cmax = Math.max(Math.max(R, G), B);
     float Cmin = Math.min(Math.min(R, G), B);
     float delta = Cmax - Cmin;
