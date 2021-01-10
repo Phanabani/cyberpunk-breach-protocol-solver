@@ -23,10 +23,12 @@ class OCRResult {
 
 class DetectionResult {
   OCRResult matrix, sequences;
+  int bufferSize;
 
-  public DetectionResult(OCRResult matrix, OCRResult sequences) {
+  public DetectionResult(OCRResult matrix, OCRResult sequences, int bufferSize) {
     this.matrix = matrix;
     this.sequences = sequences;
+    this.bufferSize = bufferSize;
   }
 }
 
@@ -85,6 +87,7 @@ public class Detector {
   private static final Dimension basisDim = new Dimension(2560, 1440);
   private static final Point matrixFindBoxStart = new Point(655, 465);
   private static final Point sequencesFindBoxStart = new Point(1484, 450);
+  private static final Point bufferFindBoxStart = new Point(1160, 246);
 
   private ScreenScaler screenScaler;
   private Tesseract tess;
@@ -162,6 +165,19 @@ public class Detector {
     return new Rectangle(topLeft, dim);
   }
 
+  private int calcBufferSize(Rectangle bufferBoundingBox) {
+    float width = bufferBoundingBox.width;
+    float height = bufferBoundingBox.height;
+    // Calculate padding size between buffer bounding box and inner buffer boxes
+    float pad = height * 5/18;
+    // Get width/height of inner buffer boxes
+    float innerWidth = width - 2 * pad;
+    float innerHeight = height - 2 * pad;
+    // Attenuate for padding between buffer boxes and divide by inner height
+    // to get number of boxes
+    return (int)(innerWidth * 18/23 / innerHeight);
+  }
+
   private OCRResult doOCR(BufferedImage img, Rectangle boundingBox) {
     img = img.getSubimage(
         boundingBox.x, boundingBox.y, boundingBox.width, boundingBox.height
@@ -236,6 +252,13 @@ public class Detector {
     // cut out the part of the box with the hack descriptions
     sequencesBox.width = sequencesBox.width * 4 / 10;
 
+    Rectangle bufferBox = findBox(capture, screenScaler.scale(bufferFindBoxStart), 1);
+    int bufferSize;
+    if (bufferBox == null)
+      bufferSize = 8;
+    else
+      bufferSize = calcBufferSize(bufferBox);
+
     OCRResult matrix = doOCR(capture, matrixBox);
     if (matrix == null)
       return null;
@@ -244,7 +267,7 @@ public class Detector {
     if (sequences == null)
       return null;
 
-    return new DetectionResult(matrix, sequences);
+    return new DetectionResult(matrix, sequences, bufferSize);
   }
 
 }
