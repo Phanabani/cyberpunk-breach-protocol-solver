@@ -16,6 +16,10 @@ class GridNode {
     this.y = y;
     this.value = value;
   }
+
+  public String toString() {
+    return String.format("<GridNode %02X (%d, %d)>", value, x, y);
+  }
 }
 
 class Grid2D {
@@ -202,51 +206,80 @@ public class Solver {
     }
   }
 
-  private boolean solveRecursive(Deque<GridNode> stack, Integer[] sequence) {
-    return solveRecursive(stack, sequence, 0, 0, null);
+  private boolean solveRecursive(Deque<GridNode> stack, List<? extends List<Integer>> sequences) {
+    return solveRecursive(stack, sequences, 0, 0, 0, 0, null);
   }
 
   private boolean solveRecursive(
-      Deque<GridNode> deque, Integer[] sequence, int bufferIndex, int seqIndex,
+      Deque<GridNode> deque, List<? extends List<Integer>> sequences,
+      int bufferIndex, int seqIndex, int seqValueIndex, int bleedIndex,
       GridNode lastNode
   ) {
-    if (sequence.length - seqIndex + bufferIndex > bufferSize)
-      // It's impossible to finish this sequence without overflowing the buffer
-      return false;
-
+    boolean solved;
+    int newSeqIndex = seqIndex;
+    int newBleedIndex = bleedIndex;
     int width = data.getWidth();
     int height = data.getHeight();
     boolean horizontal = bufferIndex % 2 == 0;
     if (lastNode == null)
       lastNode = new GridNode(0, 0, 0);
+    List<Integer> seq = sequences.get(seqIndex);
+
+    if (seq.size() - seqValueIndex + bufferIndex > bufferSize)
+      // It's impossible to finish this sequence without overflowing the buffer
+      // we could determine this earlier and include bleeding but that would
+      // probably just be more complicated than necessary
+      return false;
 
     for (
         GridNode node = horizontal
-            ? data.findInRow(lastNode.y, sequence[seqIndex], 0)
-            : data.findInColumn(lastNode.x, sequence[seqIndex], 0);
+            ? data.findInRow(lastNode.y, seq.get(seqValueIndex), 0)
+            : data.findInColumn(lastNode.x, seq.get(seqValueIndex), 0);
         node != null;
         node = horizontal
-            ? data.findInRow(lastNode.y, sequence[seqIndex], node.x + 1)
-            : data.findInColumn(lastNode.x, sequence[seqIndex], node.y + 1)
+            ? data.findInRow(lastNode.y, seq.get(seqValueIndex), node.x + 1)
+            : data.findInColumn(lastNode.x, seq.get(seqValueIndex), node.y + 1)
     ) {
       // Iterate through all instances of value in this row or col
       if (deque.contains(node))
         // Already used this node; skip!
         continue;
+
       deque.addLast(node);
-      if (seqIndex == sequence.length - 1
-          || solveRecursive(deque, sequence, bufferIndex + 1, seqIndex + 1, node)) {
+
+      // TODO what to do when the loop exits because bleeding failed
+      if (seqIndex + 1 < sequences.size() && node.value.equals(sequences.get(seqIndex + 1).get(bleedIndex)))
+        // Bleed into the next sequence
+        newBleedIndex = bleedIndex + 1;
+      if (seqValueIndex == seq.size() - 1) {
+        seqValueIndex = Math.max(newBleedIndex - 1, 0);
+        newBleedIndex = 0;
+        newSeqIndex = seqIndex + 1;
+      }
+
+      solved = newSeqIndex == sequences.size() || solveRecursive(
+          deque, sequences, bufferIndex + 1, newSeqIndex, seqValueIndex + 1, newBleedIndex, node
+      );
+      if (newSeqIndex == sequences.size()) {
+        for (List<Integer> s : sequences) {
+          System.out.println(s);
+        }
+      }
+      if (solved)
         // We reached the end of the sequence and found everything.
         // Collapse back up the call stack.
         return true;
-      }
       deque.removeLast();
     }
 
-    if (seqIndex == 0 && bufferIndex + sequence.length < bufferSize) {
+    // Bridging is about to occur, so bleeding should be reset
+    bleedIndex = 0;
+
+    if (seqValueIndex == 0 && bufferIndex + seq.size() < bufferSize) {
       // We didn't find anything in this row/col, so just use its cells as a
       // bridge to get to the right value.
-      // Do NOT increment seqIndex because we didn't actually find the value here
+      // Do NOT increment seqValueIndex because we didn't actually find the
+      // value here
       for (
           GridNode node = horizontal
               ? data.get(0, lastNode.y)
@@ -259,8 +292,12 @@ public class Solver {
         if (bufferIndex != 0 && node == lastNode)
           // Skip the node we just were on
           continue;
+
         deque.addLast(node);
-        if (solveRecursive(deque, sequence, bufferIndex + 1, seqIndex, node))
+        solved = solveRecursive(
+            deque, sequences, bufferIndex + 1, seqIndex, seqValueIndex, bleedIndex, node
+        );
+        if (solved)
           return true;
         deque.removeLast();
       }
