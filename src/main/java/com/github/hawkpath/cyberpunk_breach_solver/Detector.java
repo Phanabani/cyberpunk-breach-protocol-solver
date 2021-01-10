@@ -67,35 +67,24 @@ class ScreenScaler {
 
 public class Detector {
 
-  private static final Rectangle basisRect = new Rectangle(0, 0, 2560, 1440);
-  private static final Rectangle basisMatrixRect = new Rectangle(375, 450, 566, 510);
-  // 3 sequences; might be taller downwards for more
-  private static final Rectangle basisSequencesRect = new Rectangle(1100, 450, 384, 80);
-  // 6 buffer slots; might be longer to the right
-  private static final Rectangle basisBufferRect = new Rectangle(1143, 241, 364, 84);
+  private static final int IMAGE_THRESHOLD = 90;
+  private static final Dimension basisDim = new Dimension(2560, 1440);
   private static final ArrayList<String> possibleCells = new ArrayList<>(Arrays.asList(
       "FF", "55", "1C", "BD", "E9", "7A"
   ));
+  private static final LevenshteinDistance leven = new LevenshteinDistance(4);
 
-  private static final int THRESHOLD = 100;
-  private static LevenshteinDistance leven = new LevenshteinDistance(4);
-
+  private ScreenScaler screenScaler;
   private Tesseract tess;
   private Robot robot;
-  private Rectangle screenRect;
-  private Rectangle screenMatrixRect;
-  private Rectangle screenSequencesRect;
-  private Rectangle screenBufferRect;
 
   public Detector() throws AWTException {
-    DisplayMode display = GraphicsEnvironment.getLocalGraphicsEnvironment()
-        .getDefaultScreenDevice().getDisplayMode();
     robot = new Robot();
-    screenRect = new Rectangle(0, 0, display.getWidth(), display.getHeight());
-    screenMatrixRect = scaleToScreen(basisMatrixRect);
-    screenSequencesRect = scaleToScreen(basisSequencesRect);
-    screenBufferRect = scaleToScreen(basisBufferRect);
+    screenScaler = new ScreenScaler(basisDim);
+    initTesseract();
+  }
 
+  private void initTesseract() {
     // https://github.com/tesseract-ocr/tessdata_best
     File tessdata = Utils.getResource("tessdata");
     assert tessdata != null;
@@ -112,18 +101,8 @@ public class Detector {
     }
   }
 
-  private Rectangle scaleToScreen(Rectangle rect) {
-    float scaleX = (float) screenRect.width / basisRect.width;
-    float scaleY = (float) screenRect.height / basisRect.height;
-    int x = (int)(scaleX * rect.x);
-    int y = (int)(scaleY * rect.y);
-    int w = (int)(scaleX * rect.width);
-    int h = (int)(scaleY * rect.height);
-    return new Rectangle(x, y, w, h);
-  }
-
   private DetectionResult doOCR(BufferedImage img) {
-    ImageProcessing.threshold(img, THRESHOLD);
+    ImageProcessing.threshold(img, IMAGE_THRESHOLD);
     ImageProcessing.invert(img);
     try {
       String text = tess.doOCR(img);
