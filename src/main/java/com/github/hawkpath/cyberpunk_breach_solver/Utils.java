@@ -19,6 +19,19 @@ public class Utils {
     }
   }
 
+  public static boolean isGridUniform(ArrayList<ArrayList<Integer>> list) {
+    if (list.size() <= 1)
+      return true;
+
+    int rowSize = list.get(0).size();
+    for (int i=1; i<list.size(); i++) {
+      if (list.get(i).size() != rowSize)
+        return false;
+    }
+
+    return true;
+  }
+
   public static Integer[][] toJaggedArray(ArrayList<ArrayList<Integer>> list) {
     if (list.size() == 0)
       return null;
