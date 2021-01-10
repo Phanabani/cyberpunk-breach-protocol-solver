@@ -34,6 +34,7 @@ public class Detector {
   ));
 
   private static final int THRESHOLD = 100;
+  private static LevenshteinDistance leven = new LevenshteinDistance(4);
 
   private Tesseract tess;
   private Robot robot;
@@ -120,8 +121,6 @@ public class Detector {
    * Find the nearest string by Levenshtein distance
    */
   private static String findNearestPossible(String word) {
-    LevenshteinDistance leven = new LevenshteinDistance(4);
-
     int lowestDist = 0;
     String bestMatch = null;
     for (String possible : possibleCells) {
