@@ -11,13 +11,22 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
 
-class DetectionResult {
+class OCRResult {
   ArrayList<ArrayList<Integer>> values;
   ArrayList<Rectangle> regions;
 
-  public DetectionResult(ArrayList<ArrayList<Integer>> values, ArrayList<Rectangle> regions) {
+  public OCRResult(ArrayList<ArrayList<Integer>> values, ArrayList<Rectangle> regions) {
     this.values = values;
     this.regions = regions;
+  }
+}
+
+class DetectionResult {
+  OCRResult matrix, sequences;
+
+  public DetectionResult(OCRResult matrix, OCRResult sequences) {
+    this.matrix = matrix;
+    this.sequences = sequences;
   }
 }
 
@@ -68,11 +77,14 @@ class ScreenScaler {
 public class Detector {
 
   private static final int IMAGE_THRESHOLD = 90;
-  private static final Dimension basisDim = new Dimension(2560, 1440);
   private static final ArrayList<String> possibleCells = new ArrayList<>(Arrays.asList(
       "FF", "55", "1C", "BD", "E9", "7A"
   ));
   private static final LevenshteinDistance leven = new LevenshteinDistance(4);
+
+  private static final Dimension basisDim = new Dimension(2560, 1440);
+  private static final Point matrixFindBoxStart = new Point(655, 465);
+  private static final Point sequencesFindBoxStart = new Point(1484, 450);
 
   private ScreenScaler screenScaler;
   private Tesseract tess;
@@ -101,15 +113,66 @@ public class Detector {
     }
   }
 
-  private DetectionResult doOCR(BufferedImage img) {
-    ImageProcessing.threshold(img, IMAGE_THRESHOLD);
-    ImageProcessing.invert(img);
+  /**
+   * Find a black outlined rectangle in the image. The algorithm first searches
+   * left until it finds a black pixel (leftmost bounds of the box), searches
+   * up to get the top left bounds, padding, then searches from this point to
+   * the right and down to find the dimensions of the box. Each time an edge
+   * is found, the cursor moves inward by `padding` pixels to account for edges
+   * that aren't perfectly straight.
+   * @param img the image to use
+   * @param start a point in the top-middle(ish) of the box
+   * @param padding how many pixels to move inward after finding a border (to
+   *                account for any non-straight-line borders in the binarized
+   *                image).
+   */
+  private Rectangle findBox(BufferedImage img, Point start, int padding) {
+    Point p;
+    Point topLeft = new Point();
+    Dimension dim = new Dimension();
+
+    // Search left
+    p = ImageProcessing.searchDirectionallyUntil(img, start, -1, 0, 0x000000);
+    if (p == null)
+      return null;
+    p.translate(padding, 0);
+    topLeft.x = p.x;
+
+    // Search up
+    p = ImageProcessing.searchDirectionallyUntil(img, p, 0, -1, 0x000000);
+    if (p == null)
+      return null;
+    p.translate(0, padding);
+    topLeft.y = p.y;
+
+    // Search right
+    p = ImageProcessing.searchDirectionallyUntil(img, topLeft, 1, 0, 0x000000);
+    if (p == null)
+      return null;
+    p.translate(-padding, 0);
+    dim.width = p.x - topLeft.x;
+
+    // Search right
+    p = ImageProcessing.searchDirectionallyUntil(img, topLeft, 0, 1, 0x000000);
+    if (p == null)
+      return null;
+    p.translate(0, -padding);
+    dim.height = p.y - topLeft.y;
+
+    return new Rectangle(topLeft, dim);
+  }
+
+  private OCRResult doOCR(BufferedImage img, Rectangle boundingBox) {
+    img = img.getSubimage(
+        boundingBox.x, boundingBox.y, boundingBox.width, boundingBox.height
+    );
     try {
       String text = tess.doOCR(img);
       ArrayList<Rectangle> regions = (ArrayList<Rectangle>) tess.getSegmentedRegions(
           img, ITessAPI.TessPageIteratorLevel.RIL_WORD
       );
-      return new DetectionResult(parseText(text), regions);
+      offsetRegions(regions, boundingBox.getLocation());
+      return new OCRResult(parseText(text), regions);
     } catch (NullPointerException | TesseractException e) {
       return null;
     }
@@ -141,7 +204,8 @@ public class Detector {
   }
 
   /**
-   * Find the nearest cell value by Levenshtein distance
+   * Find the most similar cell value by Levenshtein distance (to correct weird
+   * values obtained by OCR)
    */
   private static String findNearestPossibleCellValue(String word) {
     int lowestDist = 0;
@@ -157,21 +221,30 @@ public class Detector {
     return bestMatch;
   }
 
-  private DetectionResult detect(Rectangle captureRegion) {
-    BufferedImage capture = robot.createScreenCapture(captureRegion);
-    DetectionResult detectionResult = doOCR(capture);
-    if (detectionResult == null)
+  public DetectionResult detect() {
+    BufferedImage capture = robot.createScreenCapture(screenScaler.scale(new Rectangle(basisDim)));
+    ImageProcessing.threshold(capture, IMAGE_THRESHOLD);
+    ImageProcessing.invert(capture);
+
+    Rectangle matrixBox = findBox(capture, screenScaler.scale(matrixFindBoxStart), 10);
+    if (matrixBox == null)
       return null;
-    offsetRegions(detectionResult.regions, captureRegion.getLocation());
-    return detectionResult;
-  }
 
-  public DetectionResult detectMatrix() {
-    return detect(screenMatrixRect);
-  }
+    Rectangle sequencesBox = findBox(capture, screenScaler.scale(sequencesFindBoxStart), 6);
+    if (sequencesBox == null)
+      return null;
+    // cut out the part of the box with the hack descriptions
+    sequencesBox.width = sequencesBox.width * 4 / 10;
 
-  public DetectionResult detectSequences() {
-    return detect(screenSequencesRect);
+    OCRResult matrix = doOCR(capture, matrixBox);
+    if (matrix == null)
+      return null;
+
+    OCRResult sequences = doOCR(capture, sequencesBox);
+    if (sequences == null)
+      return null;
+
+    return new DetectionResult(matrix, sequences);
   }
 
 }
