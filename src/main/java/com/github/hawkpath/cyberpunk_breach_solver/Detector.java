@@ -78,7 +78,11 @@ class ScreenScaler {
 
 public class Detector {
 
-  private static final int IMAGE_THRESHOLD = 90;
+  private static final int BOX_THRESHOLD = 80;
+  private static final int MATRIX_THRESHOLD = 110;
+  private static final int MATRIX_THRESHOLD_MAX = 140;
+  private static final int MATRIX_THRESHOLD_DELTA = 15;
+  private static final int SEQUENCES_THRESHOLD = 130;
   private static final ArrayList<String> possibleCells = new ArrayList<>(Arrays.asList(
       "FF", "55", "1C", "BD", "E9", "7A"
   ));
@@ -238,32 +242,62 @@ public class Detector {
   }
 
   public DetectionResult detect() {
-    BufferedImage capture = robot.createScreenCapture(screenScaler.scale(new Rectangle(basisDim)));
-    ImageProcessing.threshold(capture, IMAGE_THRESHOLD);
-    ImageProcessing.invert(capture);
+    BufferedImage captureMaster = robot.createScreenCapture(screenScaler.scale(new Rectangle(basisDim)));
 
-    Rectangle matrixBox = findBox(capture, screenScaler.scale(matrixFindBoxStart), 10);
+    // Find bounding boxes
+
+    BufferedImage captureBoundingBoxes = ImageProcessing.copy(captureMaster);
+    ImageProcessing.threshold(captureBoundingBoxes, BOX_THRESHOLD);
+    ImageProcessing.invert(captureBoundingBoxes);
+
+    Rectangle matrixBox = findBox(
+        captureBoundingBoxes, screenScaler.scale(matrixFindBoxStart), 10
+    );
     if (matrixBox == null)
       return null;
 
-    Rectangle sequencesBox = findBox(capture, screenScaler.scale(sequencesFindBoxStart), 6);
+    Rectangle sequencesBox = findBox(
+        captureBoundingBoxes, screenScaler.scale(sequencesFindBoxStart), 6
+    );
     if (sequencesBox == null)
       return null;
-    // cut out the part of the box with the hack descriptions
+    // cut out the part of the sequences box with the hack descriptions
     sequencesBox.width = sequencesBox.width * 4 / 10;
 
-    Rectangle bufferBox = findBox(capture, screenScaler.scale(bufferFindBoxStart), 1);
+    Rectangle bufferBox = findBox(
+        captureBoundingBoxes, screenScaler.scale(bufferFindBoxStart), 1
+    );
     int bufferSize;
     if (bufferBox == null)
       bufferSize = 8;
     else
       bufferSize = calcBufferSize(bufferBox);
 
-    OCRResult matrix = doOCR(capture, matrixBox);
+    // Perform OCR
+
+    // Detect the matrix
+    BufferedImage captureMatrix;
+    OCRResult matrix = null;
+    for (int thresh=MATRIX_THRESHOLD; thresh<=MATRIX_THRESHOLD_MAX;
+         thresh+=MATRIX_THRESHOLD_DELTA) {
+      captureMatrix = ImageProcessing.copy(captureMaster);
+      ImageProcessing.threshold(captureMatrix, thresh);
+      ImageProcessing.invert(captureMatrix);
+
+      matrix = doOCR(captureMatrix, matrixBox);
+      if (matrix != null && Utils.isGridUniform(matrix.values))
+        // the OCR successfully found a well-formed grid
+        break;
+    }
     if (matrix == null)
       return null;
 
-    OCRResult sequences = doOCR(capture, sequencesBox);
+    // Detect the sequences
+    BufferedImage captureSequences = ImageProcessing.copy(captureMaster);
+    ImageProcessing.threshold(captureSequences, SEQUENCES_THRESHOLD);
+    ImageProcessing.invert(captureSequences);
+
+    OCRResult sequences = doOCR(captureSequences, sequencesBox);
     if (sequences == null)
       return null;
 
