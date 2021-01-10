@@ -37,25 +37,25 @@ class ScreenScaler {
     scaleY = (float) screen.height / basis.height;
   }
 
-  private Point scale(int x, int y) {
+  public Point scale(int x, int y) {
     x = (int)(scaleX * x);
     y = (int)(scaleY * y);
     return new Point(x, y);
   }
 
-  private Point scale(Point point) {
+  public Point scale(Point point) {
     int x = (int)(scaleX * point.x);
     int y = (int)(scaleY * point.y);
     return new Point(x, y);
   }
 
-  private Dimension scale(Dimension dim) {
+  public Dimension scale(Dimension dim) {
     int w = (int)(scaleX * dim.width);
     int h = (int)(scaleY * dim.height);
     return new Dimension(w, h);
   }
 
-  private Rectangle scale(Rectangle rect) {
+  public Rectangle scale(Rectangle rect) {
     int x = (int)(scaleX * rect.x);
     int y = (int)(scaleY * rect.y);
     int w = (int)(scaleX * rect.width);
