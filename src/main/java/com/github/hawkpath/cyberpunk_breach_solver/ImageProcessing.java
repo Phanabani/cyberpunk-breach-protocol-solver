@@ -1,5 +1,6 @@
 package com.github.hawkpath.cyberpunk_breach_solver;
 
+import java.awt.Point;
 import java.awt.image.BufferedImage;
 import java.awt.image.ColorModel;
 import java.awt.image.DataBufferInt;
@@ -35,6 +36,25 @@ public class ImageProcessing {
       int b = (0x00_00_FF & pixels[i]);
       pixels[i] = (255 - r) << 16 | (255 - g) << 8 | (255 - b);
     }
+  }
+
+  public static Point searchDirectionallyUntil(
+      BufferedImage img,
+      Point startPos, int deltaX, int deltaY,
+      ColorHSV color, float tolH, float tolS, float tolV
+  ) {
+    int x = startPos.x;
+    int y = startPos.y;
+    int width = img.getWidth();
+    int height = img.getHeight();
+    int[] pixels = ((DataBufferInt)img.getRaster().getDataBuffer()).getData();
+
+    for ( ; x <= width && y <= height; x+=deltaX, y+=deltaY) {
+      int pixel = pixels[y * width + x];
+      if (color.withinTolerance(ColorHSV.fromRGB(pixel), tolH, tolS, tolV))
+        return new Point(x, y);
+    }
+    return null;
   }
 
 }
