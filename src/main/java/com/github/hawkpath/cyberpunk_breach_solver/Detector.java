@@ -21,6 +21,50 @@ class DetectionResult {
   }
 }
 
+class ScreenScaler {
+
+  private Dimension basis;
+  private Dimension screen;
+  private float scaleX;
+  private float scaleY;
+
+  public ScreenScaler(Dimension basis) {
+    this.basis = basis;
+    DisplayMode display = GraphicsEnvironment.getLocalGraphicsEnvironment()
+        .getDefaultScreenDevice().getDisplayMode();
+    screen = new Dimension(display.getWidth(), display.getHeight());
+    scaleX = (float) screen.width / basis.width;
+    scaleY = (float) screen.height / basis.height;
+  }
+
+  private Point scale(int x, int y) {
+    x = (int)(scaleX * x);
+    y = (int)(scaleY * y);
+    return new Point(x, y);
+  }
+
+  private Point scale(Point point) {
+    int x = (int)(scaleX * point.x);
+    int y = (int)(scaleY * point.y);
+    return new Point(x, y);
+  }
+
+  private Dimension scale(Dimension dim) {
+    int w = (int)(scaleX * dim.width);
+    int h = (int)(scaleY * dim.height);
+    return new Dimension(w, h);
+  }
+
+  private Rectangle scale(Rectangle rect) {
+    int x = (int)(scaleX * rect.x);
+    int y = (int)(scaleY * rect.y);
+    int w = (int)(scaleX * rect.width);
+    int h = (int)(scaleY * rect.height);
+    return new Rectangle(x, y, w, h);
+  }
+
+}
+
 public class Detector {
 
   private static final Rectangle basisRect = new Rectangle(0, 0, 2560, 1440);
