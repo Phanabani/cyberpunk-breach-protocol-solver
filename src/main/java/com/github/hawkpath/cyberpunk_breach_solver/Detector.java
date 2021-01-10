@@ -131,7 +131,7 @@ public class Detector {
 
   private static Integer parseWord(String word) {
     if (!possibleCells.contains(word)) {
-      word = findNearestPossible(word);
+      word = findNearestPossibleCellValue(word);
     }
     try {
       return Integer.parseInt(word, 16);
@@ -141,9 +141,9 @@ public class Detector {
   }
 
   /**
-   * Find the nearest string by Levenshtein distance
+   * Find the nearest cell value by Levenshtein distance
    */
-  private static String findNearestPossible(String word) {
+  private static String findNearestPossibleCellValue(String word) {
     int lowestDist = 0;
     String bestMatch = null;
     for (String possible : possibleCells) {
