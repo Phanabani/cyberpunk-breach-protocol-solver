@@ -159,7 +159,7 @@ public class Detector {
     p.translate(-padding, 0);
     dim.width = p.x - topLeft.x;
 
-    // Search right
+    // Search down
     p = ImageProcessing.searchDirectionallyUntil(img, topLeft, 0, 1, 0x000000);
     if (p == null)
       return null;
