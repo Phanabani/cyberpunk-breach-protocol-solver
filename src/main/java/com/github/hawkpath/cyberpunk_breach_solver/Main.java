@@ -35,6 +35,8 @@ public class Main implements NativeKeyListener {
     String modifiers = NativeKeyEvent.getModifiersText(e.getModifiers());
     if (key.equals("5"))
       runSuite();
+    else if (key.equals("0"))
+      overlay.clearSolution();
   }
 
   public void runSuite() {
