@@ -248,8 +248,11 @@ public class Solver {
       lastNode = new GridNode(0, 0, 0);
     List<Integer> seq = sequences.get(seqIndex);
 
-    if (seqValueIndex == seq.size()) {
-      // We're at the end of this sequence; move to the next
+    while (seqValueIndex == seq.size()) {
+      // We're at the end of this sequence; move to the next.
+      // This is a loop because the next pattern may be a duplicate of
+      // the previous, meaning overlap will put seqValueIndex at the end of
+      // the sequence, and we don't want that
       if (++seqIndex == sequences.size())
         // We reached the end of the sequence and found everything.
         // Collapse back up the call stack.
