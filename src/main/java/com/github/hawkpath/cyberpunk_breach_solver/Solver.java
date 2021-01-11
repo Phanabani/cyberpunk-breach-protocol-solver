@@ -198,6 +198,7 @@ public class Solver {
       return;
     solution = null;
     ArrayDeque<GridNode> stack = new ArrayDeque<>(bufferSize);
+
     for (List<List<Integer>> sequences : sequencePermutator) {
       if (solveRecursive(stack, sequences)) {
         solution = new ArrayList<>(stack);
@@ -206,24 +207,57 @@ public class Solver {
     }
   }
 
+  private static int overlapSize(List<? extends List<Integer>> sequences, int secondSeqIndex) {
+    if (secondSeqIndex == 0)
+      return 0;
+    List<Integer> seq1 = sequences.get(secondSeqIndex - 1);
+    List<Integer> seq2 = sequences.get(secondSeqIndex);
+
+    int overlap = 0;
+    for (Integer value : seq1) {
+      if (overlap == seq2.size())
+        // We have another value in seq1 but we're at the end of seq2; try again!
+        overlap = 0;
+      if (value.equals(seq2.get(overlap))) {
+        // Overlap is occurring
+        overlap++;
+      } else if (value.equals(seq2.get(0))) {
+        // Reset overlap but we're already starting another overlap
+        overlap = 1;
+      } else {
+        // Reset overlap
+        overlap = 0;
+      }
+    }
+    return overlap;
+  }
+
   private boolean solveRecursive(Deque<GridNode> stack, List<? extends List<Integer>> sequences) {
-    return solveRecursive(stack, sequences, 0, 0, 0, 0, null);
+    return solveRecursive(stack, sequences, 0, 0, 0, null);
   }
 
   private boolean solveRecursive(
       Deque<GridNode> deque, List<? extends List<Integer>> sequences,
-      int bufferIndex, int seqIndex, int seqValueIndex, int bleedIndex,
-      GridNode lastNode
+      int bufferIndex, int seqIndex, int seqValueIndex, GridNode lastNode
   ) {
     boolean solved;
-    int newSeqIndex = seqIndex;
-    int newBleedIndex = bleedIndex;
     int width = data.getWidth();
     int height = data.getHeight();
     boolean horizontal = bufferIndex % 2 == 0;
     if (lastNode == null)
       lastNode = new GridNode(0, 0, 0);
     List<Integer> seq = sequences.get(seqIndex);
+
+    if (seqValueIndex == seq.size()) {
+      // We're at the end of this sequence; move to the next
+      if (++seqIndex == sequences.size())
+        // We reached the end of the sequence and found everything.
+        // Collapse back up the call stack.
+        return true;
+      seq = sequences.get(seqIndex);
+      // If this sequence overlaps the previous sequence, skip the overlap
+      seqValueIndex = overlapSize(sequences, seqIndex);
+    }
 
     if (seq.size() - seqValueIndex + bufferIndex > bufferSize)
       // It's impossible to finish this sequence without overflowing the buffer
@@ -247,33 +281,15 @@ public class Solver {
 
       deque.addLast(node);
 
-      // TODO what to do when the loop exits because bleeding failed
-      if (seqIndex + 1 < sequences.size() && node.value.equals(sequences.get(seqIndex + 1).get(bleedIndex)))
-        // Bleed into the next sequence
-        newBleedIndex = bleedIndex + 1;
-      if (seqValueIndex == seq.size() - 1) {
-        seqValueIndex = Math.max(newBleedIndex - 1, 0);
-        newBleedIndex = 0;
-        newSeqIndex = seqIndex + 1;
-      }
-
-      solved = newSeqIndex == sequences.size() || solveRecursive(
-          deque, sequences, bufferIndex + 1, newSeqIndex, seqValueIndex + 1, newBleedIndex, node
+      solved = solveRecursive(
+          deque, sequences, bufferIndex + 1, seqIndex, seqValueIndex + 1, node
       );
-      if (newSeqIndex == sequences.size()) {
-        for (List<Integer> s : sequences) {
-          System.out.println(s);
-        }
-      }
       if (solved)
-        // We reached the end of the sequence and found everything.
-        // Collapse back up the call stack.
+        // We found the solution somewhere down the call stack; propagate the
+        // solution up and out
         return true;
       deque.removeLast();
     }
-
-    // Bridging is about to occur, so bleeding should be reset
-    bleedIndex = 0;
 
     if (seqValueIndex == 0 && bufferIndex + seq.size() < bufferSize) {
       // We didn't find anything in this row/col, so just use its cells as a
@@ -289,13 +305,14 @@ public class Solver {
               ? data.get(node.x + 1, lastNode.y)
               : data.get(lastNode.x, node.y + 1)
       ) {
+        // Try every row/column to get to the next required value
         if (bufferIndex != 0 && node == lastNode)
           // Skip the node we just were on
           continue;
 
         deque.addLast(node);
         solved = solveRecursive(
-            deque, sequences, bufferIndex + 1, seqIndex, seqValueIndex, bleedIndex, node
+            deque, sequences, bufferIndex + 1, seqIndex, seqValueIndex, node
         );
         if (solved)
           return true;
