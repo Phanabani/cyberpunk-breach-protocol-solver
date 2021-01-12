@@ -61,17 +61,20 @@ public class Overlay extends JFrame {
 
   public void setRegions(ArrayList<Rectangle> regions) {
     overlayComponent.regions = regions;
-    setAlwaysOnTop(false);
-    setAlwaysOnTop(true);
+    forceOnTop();
     overlayComponent.repaint();
   }
 
   public void setSolution(ArrayList<GridNode> solution, int matrixWidth) {
     overlayComponent.solution = solution;
     overlayComponent.matrixWidth = matrixWidth;
+    forceOnTop();
+    overlayComponent.repaint();
+  }
+
+  private void forceOnTop() {
     setAlwaysOnTop(false);
     setAlwaysOnTop(true);
-    overlayComponent.repaint();
   }
 
   public void clearSolution() {
