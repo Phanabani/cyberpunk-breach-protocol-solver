@@ -159,8 +159,7 @@ class SequencePermutator implements Iterable<List<List<Integer>>> {
 
           for (List<List<Integer>> permutation : permutator) {
             // Iterate through each permutation of this combination
-            if (totalLength(permutation) <= maxBufferSize)
-              permutations.add(permutation);
+            permutations.add(permutation);
           }
         }
       }
