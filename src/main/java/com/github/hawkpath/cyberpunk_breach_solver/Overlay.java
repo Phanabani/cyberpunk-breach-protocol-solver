@@ -85,11 +85,15 @@ public class Overlay extends JFrame {
 
 class OverlayComponent extends JComponent {
 
-  static final Color lineColor = new Color(0x54FFE7);
+  static final Color firstCellColor = new Color(0xD0FFAE25, true);
+  static final Color mainColor = new Color(0xD054FFE7, true);
   static final int boxPadding = 10;
+  static final int strokeWidth = 6;
   static final Stroke stroke = new BasicStroke(
-      6, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND
+      strokeWidth, BasicStroke.CAP_BUTT, BasicStroke.JOIN_ROUND
   );
+  static final String regionNullMsg = "Region out of bounds. Matrix width is possibly wrong";
+
   protected ArrayList<Rectangle> regions = null;
   protected ArrayList<GridNode> solution = null;
   protected int matrixWidth = -1;
@@ -113,55 +117,80 @@ class OverlayComponent extends JComponent {
         RenderingHints.KEY_ANTIALIASING,
         RenderingHints.VALUE_ANTIALIAS_ON
     );
-    g.setColor(lineColor);
     g.setStroke(stroke);
 
-    GridNode s, sNext;
-    Rectangle r, rNext;
-    int x1, y1, x2, y2;
-    for (int i=0; i<solution.size(); i++) {
-      s = solution.get(i);
-      r = getRegion(s);
-      assert r != null : "Region out of bounds. Matrix width is possibly wrong";
+    GridNode node, nodeNext;
+    Rectangle rect, rectNext;
 
-      g.drawRoundRect(
-          r.x - boxPadding, r.y - boxPadding,
-          r.width + 2*boxPadding, r.height + 2*boxPadding,
-          4, 4
-      );
+    if (solution.size() > 0) {
+      node = solution.get(0);
+      rect = getRegion(node);
+      assert rect != null : regionNullMsg;
+      paintBoxAroundCell(g, rect);
+    }
+
+    g.setColor(firstCellColor);
+
+    for (int i=0; i<solution.size(); i++) {
+      node = solution.get(i);
+      rect = getRegion(node);
+      assert rect != null : regionNullMsg;
+
+      paintBoxAroundCell(g, rect);
+
+      if (i == 0)
+        // Use special color for first cell, but switch back to normal color
+        // for the rest
+        g.setColor(mainColor);
 
       if (i < solution.size() - 1) {
         // Draw line to next solution
-        sNext = solution.get(i + 1);
-        rNext = getRegion(sNext);
-        assert rNext != null : "Region out of bounds. Matrix width is possibly wrong";
+        nodeNext = solution.get(i + 1);
+        rectNext = getRegion(nodeNext);
+        assert rectNext != null : regionNullMsg;
 
-        if (s.x != sNext.x) {
-          // Horizontal
-          if (s.x < sNext.x) {
-            x1 = r.x + r.width + boxPadding;
-            x2 = rNext.x - boxPadding;
-          } else {
-            x1 = rNext.x + rNext.width + boxPadding;
-            x2 = r.x - boxPadding;
-          }
-          y1 = y2 = r.y + r.height/2;
-        } else {
-          // Vertical
-          if (s.y < sNext.y) {
-            y1 = r.y + r.height + boxPadding;
-            y2 = rNext.y - boxPadding;
-          } else {
-            y1 = rNext.y + rNext.height + boxPadding;
-            y2 = r.y - boxPadding;
-          }
-          x1 = x2 = r.x + r.width/2;
-        }
-        g.drawLine(x1, y1, x2, y2);
+        paintLineBetweenCells(g, node, rect, nodeNext, rectNext);
       }
     }
 
     g.dispose();
+  }
+
+  private void paintBoxAroundCell(Graphics2D g, Rectangle r) {
+    g.drawRoundRect(
+        r.x - boxPadding, r.y - boxPadding,
+        r.width + 2*boxPadding, r.height + 2*boxPadding,
+        4, 4
+    );
+  }
+
+  private void paintLineBetweenCells(
+      Graphics2D g, GridNode node1, Rectangle rect1, GridNode node2, Rectangle rect2
+  ) {
+    int x1, x2, y1, y2;
+    int margin = boxPadding + strokeWidth/2;
+    if (node1.x != node2.x) {
+      // Horizontal
+      if (node1.x < node2.x) {
+        x1 = rect1.x + rect1.width + margin;
+        x2 = rect2.x - margin;
+      } else {
+        x1 = rect2.x + rect2.width + margin;
+        x2 = rect1.x - margin;
+      }
+      y1 = y2 = rect1.y + rect1.height/2;
+    } else {
+      // Vertical
+      if (node1.y < node2.y) {
+        y1 = rect1.y + rect1.height + margin;
+        y2 = rect2.y - margin;
+      } else {
+        y1 = rect2.y + rect2.height + margin;
+        y2 = rect1.y - margin;
+      }
+      x1 = x2 = rect1.x + rect1.width/2;
+    }
+    g.drawLine(x1, y1, x2, y2);
   }
 
 }
