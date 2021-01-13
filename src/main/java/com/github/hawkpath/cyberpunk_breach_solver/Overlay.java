@@ -72,7 +72,7 @@ public class Overlay extends JFrame {
     overlayComponent.repaint();
   }
 
-  private void forceOnTop() {
+  public void forceOnTop() {
     setAlwaysOnTop(false);
     setAlwaysOnTop(true);
   }
