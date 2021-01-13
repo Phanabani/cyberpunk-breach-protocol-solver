@@ -122,13 +122,6 @@ class OverlayComponent extends JComponent {
     GridNode node, nodeNext;
     Rectangle rect, rectNext;
 
-    if (solution.size() > 0) {
-      node = solution.get(0);
-      rect = getRegion(node);
-      assert rect != null : regionNullMsg;
-      paintBoxAroundCell(g, rect);
-    }
-
     g.setColor(firstCellColor);
 
     for (int i=0; i<solution.size(); i++) {
