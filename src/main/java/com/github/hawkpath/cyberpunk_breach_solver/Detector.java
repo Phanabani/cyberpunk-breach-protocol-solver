@@ -183,9 +183,13 @@ public class Detector {
   }
 
   private OCRResult doOCR(BufferedImage img, Rectangle boundingBox) {
-    img = img.getSubimage(
-        boundingBox.x, boundingBox.y, boundingBox.width, boundingBox.height
-    );
+    try {
+      img = img.getSubimage(
+          boundingBox.x, boundingBox.y, boundingBox.width, boundingBox.height
+      );
+    } catch (RasterFormatException e) {
+      return null;
+    }
     try {
       String text = tess.doOCR(img);
       ArrayList<Rectangle> regions = (ArrayList<Rectangle>) tess.getSegmentedRegions(
