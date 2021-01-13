@@ -67,7 +67,7 @@ public class ImageProcessing {
     int[] pixels = ((DataBufferInt)img.getRaster().getDataBuffer()).getData();
     int pixel;
 
-    for ( ; x >= 0 && x <= width && y >= 0 && y <= height; x+=deltaX, y+=deltaY) {
+    for ( ; x >= 0 && x < width && y >= 0 && y < height; x+=deltaX, y+=deltaY) {
       pixel = pixels[y*width + x];
       if (pixel == color)
         return new Point(x, y);
