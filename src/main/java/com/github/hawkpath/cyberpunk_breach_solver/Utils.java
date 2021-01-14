@@ -1,5 +1,6 @@
 package com.github.hawkpath.cyberpunk_breach_solver;
 
+import java.awt.Color;
 import java.io.File;
 import java.net.URL;
 import java.nio.file.Paths;
@@ -66,6 +67,15 @@ public class Utils {
     }
 
     return outArr;
+  }
+
+  public static Color ColorRGBLerp(Color colorA, Color colorB, float t) {
+    float tt = 1f - t;
+    int r = (int)(tt * colorA.getRed() + t * colorB.getRed());
+    int g = (int)(tt * colorA.getGreen() + t * colorB.getGreen());
+    int b = (int)(tt * colorA.getBlue() + t * colorB.getBlue());
+    int a = (int)(tt * colorA.getAlpha() + t * colorB.getAlpha());
+    return new Color(r, g, b, a);
   }
 
 }
