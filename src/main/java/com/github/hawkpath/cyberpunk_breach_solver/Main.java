@@ -4,13 +4,18 @@ import org.jnativehook.GlobalScreen;
 import org.jnativehook.NativeHookException;
 import org.jnativehook.keyboard.NativeKeyEvent;
 import org.jnativehook.keyboard.NativeKeyListener;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.awt.AWTException;
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import java.util.logging.LogManager;
 
 public class Main implements NativeKeyListener {
+
+  final Logger logger = LoggerFactory.getLogger(Main.class.getName());
 
   Detector detector;
   Solver solver;
@@ -20,8 +25,8 @@ public class Main implements NativeKeyListener {
     try {
       detector = new Detector();
     } catch (AWTException e) {
-      System.err.println("Screen capture is unavailable on your system.");
-      return;
+      logger.error("Screen capture is unavailable on your system.");
+      System.exit(1);
     }
     solver = new Solver();
     overlay = new Overlay();
@@ -38,7 +43,7 @@ public class Main implements NativeKeyListener {
         try {
           runSuite();
         } catch (Exception exc) {
-          exc.printStackTrace();
+          logger.error("Unexpected error ", exc);
         }
         break;
       case "0":
@@ -51,6 +56,8 @@ public class Main implements NativeKeyListener {
   }
 
   public void runSuite() {
+    StringBuilder sb;
+
     overlay.clearSolution();
     try {
       Thread.sleep(100);
@@ -65,23 +72,27 @@ public class Main implements NativeKeyListener {
       return;
     }
 
-    for (ArrayList<Integer> row : detection.matrix.values) {
-      for (Integer cell : row) {
-        System.out.printf("%02X ", cell);
+    if (logger.isDebugEnabled()) {
+      sb = new StringBuilder();
+      for (ArrayList<Integer> row : detection.matrix.values) {
+        for (Integer cell : row) {
+          sb.append(String.format("%02X ", cell));
+        }
+        sb.append("\n");
       }
-      System.out.println("\n");
-    }
+      logger.debug("Matrix:\n{}", sb);
 
-    System.out.println("Sequences:");
-    for (ArrayList<Integer> row : detection.sequences.values) {
-      for (Integer i : row) {
-        System.out.printf("%02X ", i);
+      sb = new StringBuilder();
+      for (ArrayList<Integer> row : detection.sequences.values) {
+        for (Integer i : row) {
+          sb.append(String.format("%02X ", i));
+        }
+        sb.append("\n");
       }
-      System.out.println();
-    }
-    System.out.println();
+      logger.debug("Sequences:\n{}", sb);
 
-    System.out.printf("Buffer size: %d\n\n", detection.bufferSize);
+      logger.debug("Buffer size: {}", detection.bufferSize);
+    }
 
     Integer[][] matrixArr = Utils.tryGet2DSubarray(detection.matrix.values);
     if (matrixArr == null) {
@@ -97,11 +108,14 @@ public class Main implements NativeKeyListener {
       return;
     }
 
-    System.out.println("Solution:");
-    for (GridNode s : solver.getSolution()) {
-      System.out.printf("%02X (%d, %d)\n", s.value, s.x, s.y);
+    if (logger.isDebugEnabled()) {
+      sb = new StringBuilder();
+      for (GridNode s : solver.getSolution()) {
+        sb.append(String.format("%02X (%d, %d)\n", s.value, s.x, s.y));
+      }
+      sb.append("\n");
+      logger.debug("Solution:\n{}", sb);
     }
-    System.out.println();
 
     int matrixWidth = matrixArr[0].length;
     overlay.setRegions(detection.matrix.regions);
@@ -109,18 +123,26 @@ public class Main implements NativeKeyListener {
   }
 
   public static void main(String[] args) {
+    try {
+      // Check out the default logging.properties at %JDK_HOME%/jre/lib/logging.properties
+      InputStream configFile = Main.class.getClassLoader().getResourceAsStream("logging.properties");
+      LogManager.getLogManager().readConfiguration(configFile);
+    } catch (IOException ex) {
+      System.out.println("WARNING: Could not open configuration file");
+      System.out.println("WARNING: Logging not configured (console output only)");
+    }
+
     Main main = new Main(true);
 
-    Logger logger = Logger.getLogger(GlobalScreen.class.getPackage().getName());
-    logger.setLevel(Level.WARNING);
-
-    logger.setUseParentHandlers(false);
     try {
       GlobalScreen.registerNativeHook();
     }
-    catch (NativeHookException ex) {
-      System.err.println("There was a problem registering the native hook.");
-      System.err.println(ex.getMessage());
+    catch (NativeHookException exc) {
+      System.out.println(
+          "WARNING: There was a problem registering the native hook (for "
+              + "handling global key events)."
+      );
+      System.out.println(exc.getMessage());
       System.exit(1);
     }
 
