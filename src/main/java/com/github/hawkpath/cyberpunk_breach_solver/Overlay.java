@@ -92,13 +92,14 @@ public class Overlay extends JFrame {
 
 class OverlayComponent extends JComponent {
 
-  // static final Color startColor = new Color(0xD0FFAE25, true);
-  static final Color startColor = new Color(0xD0FFAE25, true);
-  static final Color endColor = new Color(0xD054FFE7, true);
+  static final Color strokeColor = new Color(0xD054FFE7, true);
   static final int boxPadding = 10;
   static final int strokeWidth = 6;
   static final Stroke stroke = new BasicStroke(
       strokeWidth, BasicStroke.CAP_BUTT, BasicStroke.JOIN_ROUND
+  );
+  static final Stroke strokeFirst = new BasicStroke(
+      2, BasicStroke.CAP_BUTT, BasicStroke.JOIN_ROUND
   );
   static final String regionNullMsg = "Region out of bounds. Matrix width is possibly wrong";
 
@@ -126,6 +127,7 @@ class OverlayComponent extends JComponent {
         RenderingHints.VALUE_ANTIALIAS_ON
     );
     g.setStroke(stroke);
+    g.setColor(strokeColor);
 
     GridNode node, nodeNext;
     Rectangle rect, rectNext;
@@ -135,9 +137,12 @@ class OverlayComponent extends JComponent {
       rect = getRegion(node);
       assert rect != null : regionNullMsg;
 
-      Color c = Utils.ColorRGBLerp(startColor, endColor, (float) i / (solution.size()-1));
-      g.setColor(c);
-      paintBoxAroundCell(g, rect);
+      paintBoxAroundCell(g, rect, boxPadding);
+      if (i == 0) {
+        g.setStroke(strokeFirst);
+        paintBoxAroundCell(g, rect, boxPadding + 8);
+        g.setStroke(stroke);
+      }
 
       if (i < solution.size() - 1) {
         // Draw line to next solution
@@ -145,27 +150,31 @@ class OverlayComponent extends JComponent {
         rectNext = getRegion(nodeNext);
         assert rectNext != null : regionNullMsg;
 
-        g.setColor(Utils.ColorRGBLerp(startColor, endColor, (float)(2*i+1)/(solution.size()-1)/2));
-        paintLineBetweenCells(g, node, rect, nodeNext, rectNext);
+        paintLineBetweenCells(
+            g, node, rect, nodeNext, rectNext,
+            (float)i/(solution.size()-1), boxPadding
+        );
       }
     }
 
     g.dispose();
   }
 
-  private void paintBoxAroundCell(Graphics2D g, Rectangle r) {
+  private void paintBoxAroundCell(Graphics2D g, Rectangle r, int padding) {
     g.drawRoundRect(
-        r.x - boxPadding, r.y - boxPadding,
-        r.width + 2*boxPadding, r.height + 2*boxPadding,
-        4, 4
+        r.x - padding, r.y - padding,
+        r.width + 2*padding, r.height + 2*padding,
+        2*padding/3, 2*padding/3
     );
   }
 
   private void paintLineBetweenCells(
-      Graphics2D g, GridNode node1, Rectangle rect1, GridNode node2, Rectangle rect2
+      Graphics2D g, GridNode node1, Rectangle rect1, GridNode node2, Rectangle rect2,
+      float offset, int padding
   ) {
     int x1, x2, y1, y2;
-    int margin = boxPadding + strokeWidth/2;
+    int margin = padding + strokeWidth/2;
+    offset = 0.5f * offset + 0.25f;
     if (node1.x != node2.x) {
       // Horizontal
       if (node1.x < node2.x) {
@@ -175,7 +184,7 @@ class OverlayComponent extends JComponent {
         x1 = rect2.x + rect2.width + margin;
         x2 = rect1.x - margin;
       }
-      y1 = y2 = rect1.y + rect1.height/2;
+      y1 = y2 = rect1.y + (int)(rect1.height*offset);
     } else {
       // Vertical
       if (node1.y < node2.y) {
@@ -185,7 +194,7 @@ class OverlayComponent extends JComponent {
         y1 = rect2.y + rect2.height + margin;
         y2 = rect1.y - margin;
       }
-      x1 = x2 = rect1.x + rect1.width/2;
+      x1 = x2 = rect1.x + (int)(rect1.width*offset);
     }
     g.drawLine(x1, y1, x2, y2);
   }
