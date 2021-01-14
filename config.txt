@@ -1,0 +1,8 @@
+# Keybinds can also include modifier keys
+#   e.g. ctrl+p
+# Keys that aren't letters/numbers need to be actually spelled out,
+#   e.g. shift+semicolon
+
+findSolution=5
+clearSolution=0
+bringToTop=9

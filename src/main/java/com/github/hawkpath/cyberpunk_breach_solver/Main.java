@@ -11,17 +11,21 @@ import java.awt.AWTException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.logging.LogManager;
 
 public class Main implements NativeKeyListener {
 
   final Logger logger = LoggerFactory.getLogger(Main.class.getName());
 
+  String findSolutionKey, clearSolutionKey, bringToTopKey;
   Detector detector;
   Solver solver;
   Overlay overlay;
 
   public Main(boolean setVisible) {
+    loadConfig();
+
     try {
       detector = new Detector();
     } catch (AWTException e) {
@@ -33,25 +37,37 @@ public class Main implements NativeKeyListener {
     overlay.setVisible(setVisible);
   }
 
+  private void loadConfig() {
+    HashMap<String, String> config = Utils.loadConfig("./config.txt");
+    if (!config.containsKey("findSolution")) {
+      logger.error("Missing config line \"findSolution=KEYBIND\"");
+    } else if (!config.containsKey("clearSolution")) {
+      logger.error("Missing config line \"clearSolution=KEYBIND\"");
+    } else if (!config.containsKey("bringToTop")) {
+      logger.error("Missing config line \"bringToTop=KEYBIND\"");
+    }
+    findSolutionKey = config.get("findSolution").toLowerCase();
+    clearSolutionKey = config.get("clearSolution").toLowerCase();
+    bringToTopKey = config.get("bringToTop").toLowerCase();
+  }
+
   public void nativeKeyTyped(NativeKeyEvent e) {}
   public void nativeKeyPressed(NativeKeyEvent e) {}
   public void nativeKeyReleased(NativeKeyEvent e) {
     String key = NativeKeyEvent.getKeyText(e.getKeyCode());
     String modifiers = NativeKeyEvent.getModifiersText(e.getModifiers());
-    switch (key) {
-      case "5":
-        try {
-          runSuite();
-        } catch (Exception exc) {
-          logger.error("Unexpected error ", exc);
-        }
-        break;
-      case "0":
-        overlay.clearSolution();
-        break;
-      case "9":
-        overlay.forceOnTop();
-        break;
+    String keypress = (modifiers.equals("")) ? key : modifiers + "+" + key;
+    keypress = keypress.toLowerCase();
+    if (keypress.equals(findSolutionKey)) {
+      try {
+        runSuite();
+      } catch (Exception exc) {
+        logger.error("Unexpected error", exc);
+      }
+    } else if (keypress.equals(clearSolutionKey)) {
+      overlay.clearSolution();
+    } else if (keypress.equals(bringToTopKey)) {
+      overlay.forceOnTop();
     }
   }
 
