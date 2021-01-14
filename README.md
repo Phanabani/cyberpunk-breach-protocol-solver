@@ -1,5 +1,7 @@
 # Cyberpunk Breach Protocol Solver
 
+![Demo image](assets/img/solver_demo.jpg)
+
 An application that solves and displays the solution for the breach protocol
 minigame in Cyberpunk 2077.
 
