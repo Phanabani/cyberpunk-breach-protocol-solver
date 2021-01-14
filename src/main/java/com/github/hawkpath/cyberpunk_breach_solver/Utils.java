@@ -18,6 +18,10 @@ public class Utils {
     }
   }
 
+  public static File getRelativeFile(String path) {
+    return Paths.get(path).toAbsolutePath().normalize().toFile();
+  }
+
   public static boolean isGridUniform(ArrayList<ArrayList<Integer>> list) {
     if (list.size() <= 1)
       return true;
