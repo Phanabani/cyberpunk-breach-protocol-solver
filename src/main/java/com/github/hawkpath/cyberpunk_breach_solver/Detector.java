@@ -7,6 +7,7 @@ import org.apache.commons.text.similarity.LevenshteinDistance;
 
 import java.awt.*;
 import java.awt.image.BufferedImage;
+import java.awt.image.RasterFormatException;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
