@@ -118,6 +118,7 @@ public class Detector {
     tess.setTessVariable("load_system_dawg", "false");
     tess.setTessVariable("load_freq_dawg", "false");
     tess.setTessVariable("tessedit_char_whitelist", " 1579ABCDEF");
+    tess.setTessVariable("user_defined_dpi", "300");
   }
 
   private static void offsetRegions(ArrayList<Rectangle> regions, Point origin) {
