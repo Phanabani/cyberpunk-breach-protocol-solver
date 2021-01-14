@@ -8,6 +8,7 @@ import com.sun.jna.platform.win32.WinUser;
 
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.WindowEvent;
 import java.util.ArrayList;
 
 public class Overlay extends JFrame {
@@ -31,6 +32,12 @@ public class Overlay extends JFrame {
 
     overlayComponent = new OverlayComponent();
     add(overlayComponent);
+
+    addWindowListener(new java.awt.event.WindowAdapter() {
+      public void windowClosing(WindowEvent winEvt) {
+        System.exit(0);
+      }
+    });
   }
 
   @Override
