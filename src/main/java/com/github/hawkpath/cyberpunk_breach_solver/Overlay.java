@@ -92,8 +92,9 @@ public class Overlay extends JFrame {
 
 class OverlayComponent extends JComponent {
 
-  static final Color firstCellColor = new Color(0xD0FFAE25, true);
-  static final Color mainColor = new Color(0xD054FFE7, true);
+  // static final Color startColor = new Color(0xD0FFAE25, true);
+  static final Color startColor = new Color(0xD0FFAE25, true);
+  static final Color endColor = new Color(0xD054FFE7, true);
   static final int boxPadding = 10;
   static final int strokeWidth = 6;
   static final Stroke stroke = new BasicStroke(
@@ -129,19 +130,14 @@ class OverlayComponent extends JComponent {
     GridNode node, nodeNext;
     Rectangle rect, rectNext;
 
-    g.setColor(firstCellColor);
-
     for (int i=0; i<solution.size(); i++) {
       node = solution.get(i);
       rect = getRegion(node);
       assert rect != null : regionNullMsg;
 
+      Color c = Utils.ColorRGBLerp(startColor, endColor, (float) i / (solution.size()-1));
+      g.setColor(c);
       paintBoxAroundCell(g, rect);
-
-      if (i == 0)
-        // Use special color for first cell, but switch back to normal color
-        // for the rest
-        g.setColor(mainColor);
 
       if (i < solution.size() - 1) {
         // Draw line to next solution
@@ -149,6 +145,7 @@ class OverlayComponent extends JComponent {
         rectNext = getRegion(nodeNext);
         assert rectNext != null : regionNullMsg;
 
+        g.setColor(Utils.ColorRGBLerp(startColor, endColor, (float)(2*i+1)/(solution.size()-1)/2));
         paintLineBetweenCells(g, node, rect, nodeNext, rectNext);
       }
     }
