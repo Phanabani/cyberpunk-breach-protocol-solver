@@ -105,11 +105,16 @@ public class Detector {
   }
 
   private void initTesseract() {
-    // https://github.com/tesseract-ocr/tessdata_best
-    File tessdata = Utils.getResource("tessdata");
-    assert tessdata != null;
     tess = new Tesseract();
-    tess.setDatapath(tessdata.toString());
+
+    // https://github.com/tesseract-ocr/tessdata_best
+    File tessdata = Utils.getRelativeFile("./tessdata");
+    if (tessdata == null) {
+      System.err.println("Missing tessdata folder.");
+      System.exit(1);
+    }
+    tess.setDatapath(tessdata.getAbsolutePath());
+
     tess.setTessVariable("load_system_dawg", "false");
     tess.setTessVariable("load_freq_dawg", "false");
     tess.setTessVariable("tessedit_char_whitelist", " 1579ABCDEF");
