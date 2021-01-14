@@ -1,5 +1,8 @@
 # Cyberpunk Breach Protocol Solver
 
+[![release](https://img.shields.io/github/v/release/hawkpath/cyberpunk-breach-protocol-solver)](https://github.com/Hawkpath/cyberpunk-breach-protocol-solver/releases)
+[![license](https://img.shields.io/github/license/hawkpath/cyberpunk-breach-protocol-solver)](LICENSE)
+
 ![Demo image](assets/img/solver_demo.jpg)
 
 An application that solves and displays the solution for the breach protocol
