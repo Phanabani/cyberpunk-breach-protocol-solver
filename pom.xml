@@ -11,8 +11,8 @@
     </properties>
 
     <groupId>com.github.hawkpath</groupId>
-    <artifactId>cyberpunk_breach_solver</artifactId>
-    <version>0.1-SNAPSHOT</version>
+    <artifactId>cyberpunk_breach_protocol_solver</artifactId>
+    <version>1.0</version>
 
     <dependencies>
         <dependency>
