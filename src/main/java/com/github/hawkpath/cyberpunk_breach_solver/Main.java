@@ -33,10 +33,21 @@ public class Main implements NativeKeyListener {
   public void nativeKeyReleased(NativeKeyEvent e) {
     String key = NativeKeyEvent.getKeyText(e.getKeyCode());
     String modifiers = NativeKeyEvent.getModifiersText(e.getModifiers());
-    if (key.equals("5"))
-      runSuite();
-    else if (key.equals("0"))
-      overlay.clearSolution();
+    switch (key) {
+      case "5":
+        try {
+          runSuite();
+        } catch (Exception exc) {
+          exc.printStackTrace();
+        }
+        break;
+      case "0":
+        overlay.clearSolution();
+        break;
+      case "9":
+        overlay.forceOnTop();
+        break;
+    }
   }
 
   public void runSuite() {
