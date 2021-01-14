@@ -4,15 +4,25 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
+    <groupId>com.github.hawkpath</groupId>
+    <artifactId>cyberpunk_breach_protocol_solver</artifactId>
+    <version>1.0</version>
+    <name>Cyberpunk Breach Protocol Solver</name>
+    <description>An application that solves and displays the solution for the breach protocol
+        minigame in Cyberpunk 2077.</description>
+
+    <developers>
+        <developer>
+            <id>hawkpath</id>
+            <name>Hawkpath</name>
+        </developer>
+    </developers>
+
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <maven.compiler.source>1.8</maven.compiler.source>
         <maven.compiler.target>1.8</maven.compiler.target>
     </properties>
-
-    <groupId>com.github.hawkpath</groupId>
-    <artifactId>cyberpunk_breach_protocol_solver</artifactId>
-    <version>1.0</version>
 
     <dependencies>
         <dependency>
@@ -54,6 +64,7 @@
 
     <build>
         <plugins>
+
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
@@ -67,27 +78,42 @@
 
             <plugin>
                 <artifactId>maven-assembly-plugin</artifactId>
-                <configuration>
-                    <archive>
-                        <manifest>
-                            <mainClass>com.github.hawkpath.cyberpunk_breach_solver.Main</mainClass>
-                        </manifest>
-                    </archive>
-                    <descriptorRefs>
-                        <descriptorRef>jar-with-dependencies</descriptorRef>
-                    </descriptorRefs>
-                    <appendAssemblyId>false</appendAssemblyId>
-                </configuration>
                 <executions>
+
                     <execution>
-                        <id>make-assembly</id>
+                        <id>make-jar</id>
                         <phase>package</phase>
                         <goals>
                             <goal>single</goal>
                         </goals>
+                        <configuration>
+                            <archive>
+                                <manifest>
+                                    <mainClass>com.github.hawkpath.cyberpunk_breach_solver.Main</mainClass>
+                                </manifest>
+                            </archive>
+                            <descriptorRefs>
+                                <descriptorRef>jar-with-dependencies</descriptorRef>
+                            </descriptorRefs>
+                            <appendAssemblyId>false</appendAssemblyId>
+                        </configuration>
                     </execution>
+
+                    <execution>
+                        <id>make-zip</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>single</goal>
+                        </goals>
+                        <configuration>
+                            <descriptor>src/assembly/bin.xml</descriptor>
+                            <finalName>${project.name}-${project.version}</finalName>
+                        </configuration>
+                    </execution>
+
                 </executions>
             </plugin>
+
         </plugins>
     </build>
 </project>
