@@ -7,6 +7,7 @@
     <fileSets>
         <fileSet>
             <includes>
+                <include>readme.txt</include>
                 <include>config.txt</include>
                 <include>tessdata/**/*</include>
             </includes>
