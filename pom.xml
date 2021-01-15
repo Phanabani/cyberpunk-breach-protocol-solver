@@ -121,7 +121,8 @@
                         </goals>
                         <configuration>
                             <descriptor>src/assembly/bin.xml</descriptor>
-                            <finalName>${project.name}-${project.version}</finalName>
+                            <appendAssemblyId>false</appendAssemblyId>
+                            <finalName>${project.build.finalName}</finalName>
                         </configuration>
                     </execution>
                 </executions>
