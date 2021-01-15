@@ -1,4 +1,4 @@
-package com.github.hawkpath.cyberpunk_breach_solver;
+package com.github.hawkpath.cyberpunk_breach_protocol_solver;
 
 import org.jnativehook.GlobalScreen;
 import org.jnativehook.NativeHookException;

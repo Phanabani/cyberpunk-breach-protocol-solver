@@ -23,7 +23,7 @@
         <maven.compiler.source>1.8</maven.compiler.source>
         <maven.compiler.target>1.8</maven.compiler.target>
         <builtBy>Hawkpath</builtBy>
-        <mainClass>com.github.hawkpath.cyberpunk_breach_solver.Main</mainClass>
+        <mainClass>com.github.hawkpath.cyberpunk_breach_protocol_solver.Main</mainClass>
     </properties>
 
     <dependencies>

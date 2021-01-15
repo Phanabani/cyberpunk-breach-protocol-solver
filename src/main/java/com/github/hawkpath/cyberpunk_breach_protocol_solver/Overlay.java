@@ -1,4 +1,4 @@
-package com.github.hawkpath.cyberpunk_breach_solver;
+package com.github.hawkpath.cyberpunk_breach_protocol_solver;
 
 import com.sun.jna.Native;
 import com.sun.jna.platform.win32.User32;

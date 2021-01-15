@@ -1,4 +1,4 @@
-package com.github.hawkpath.cyberpunk_breach_solver;
+package com.github.hawkpath.cyberpunk_breach_protocol_solver;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
