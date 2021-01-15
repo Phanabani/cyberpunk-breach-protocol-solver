@@ -136,6 +136,8 @@ public class Main implements NativeKeyListener {
     int matrixWidth = matrixArr[0].length;
     overlay.setRegions(detection.matrix.regions);
     overlay.setSolution(solution, matrixWidth);
+
+    System.gc();
   }
 
   public static void main(String[] args) {
