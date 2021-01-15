@@ -1,4 +1,4 @@
-Made by Hawkpath
+Cyberpunk Breach Protocol Solver by Hawkpath
 
 An application that solves and displays the solution for the breach protocol
 minigame in Cyberpunk 2077.
