@@ -2,7 +2,7 @@ package com.github.hawkpath.cyberpunk_breach_protocol_solver;
 
 import net.sourceforge.tess4j.ITessAPI;
 import net.sourceforge.tess4j.Tesseract;
-import net.sourceforge.tess4j.TesseractException;
+import net.sourceforge.tess4j.Word;
 import org.apache.commons.text.similarity.LevenshteinDistance;
 
 import java.awt.*;
@@ -12,21 +12,11 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
 
-class OCRResult {
-  ArrayList<ArrayList<Integer>> values;
-  ArrayList<Rectangle> regions;
-
-  public OCRResult(ArrayList<ArrayList<Integer>> values, ArrayList<Rectangle> regions) {
-    this.values = values;
-    this.regions = regions;
-  }
-}
-
 class DetectionResult {
-  OCRResult matrix, sequences;
+  OCRArray2D matrix, sequences;
   int bufferSize;
 
-  public DetectionResult(OCRResult matrix, OCRResult sequences, int bufferSize) {
+  public DetectionResult(OCRArray2D matrix, OCRArray2D sequences, int bufferSize) {
     this.matrix = matrix;
     this.sequences = sequences;
     this.bufferSize = bufferSize;
@@ -121,12 +111,6 @@ public class Detector {
     tess.setTessVariable("user_defined_dpi", "300");
   }
 
-  private static void offsetRegions(ArrayList<Rectangle> regions, Point origin) {
-    for (Rectangle r : regions) {
-      r.translate(origin.x, origin.y);
-    }
-  }
-
   /**
    * Find a black outlined rectangle in the image. The algorithm first searches
    * left until it finds a black pixel (leftmost bounds of the box), searches
@@ -189,7 +173,7 @@ public class Detector {
     return (int)(innerWidth * 18/23 / innerHeight);
   }
 
-  private OCRResult doOCR(BufferedImage img, Rectangle boundingBox) {
+  private OCRArray2D doOCR(BufferedImage img, Rectangle boundingBox) {
     try {
       img = img.getSubimage(
           boundingBox.x, boundingBox.y, boundingBox.width, boundingBox.height
@@ -197,30 +181,20 @@ public class Detector {
     } catch (RasterFormatException e) {
       return null;
     }
-    try {
-      String text = tess.doOCR(img);
-      ArrayList<Rectangle> regions = (ArrayList<Rectangle>) tess.getSegmentedRegions(
-          img, ITessAPI.TessPageIteratorLevel.RIL_WORD
-      );
-      offsetRegions(regions, boundingBox.getLocation());
-      return new OCRResult(parseText(text), regions);
-    } catch (NullPointerException | TesseractException e) {
-      return null;
-    }
-  }
 
-  private static ArrayList<ArrayList<Integer>> parseText(String text) {
-    ArrayList<ArrayList<Integer>> rows = new ArrayList<>();
-    for (String rowText : text.split("\n")) {
-      // Split up lines
-      ArrayList<Integer> row = new ArrayList<>();
-      for (String word : rowText.split(" ")) {
-        // Parse each word in the line as a hex value
-        row.add(parseWord(word));
-      }
-      rows.add(row);
+    OCRArray2D array = new OCRArray2D();
+    Rectangle lastBounds = null;
+    for (Word word : tess.getWords(img, ITessAPI.TessPageIteratorLevel.RIL_WORD)) {
+      Rectangle bounds = word.getBoundingBox();
+      bounds.translate(boundingBox.x, boundingBox.y);
+      if (lastBounds == null || bounds.y > lastBounds.y + lastBounds.height)
+        // The bounding box is below the last one, so we're on a new row
+        array.addRow();
+      array.add(parseWord(word.getText()), bounds);
+      lastBounds = bounds;
     }
-    return rows;
+
+    return array;
   }
 
   private static Integer parseWord(String word) {
@@ -288,15 +262,17 @@ public class Detector {
 
     // Detect the matrix
     BufferedImage captureMatrix;
-    OCRResult matrix = null;
+    OCRArray2D matrix = null;
     for (int thresh=MATRIX_THRESHOLD; thresh<=MATRIX_THRESHOLD_MAX;
          thresh+=MATRIX_THRESHOLD_DELTA) {
+      // TODO it'd probably be nice to optimize the image processing by
+      //   cropping rather than full copies ;)
       captureMatrix = ImageProcessing.copy(captureMaster);
       ImageProcessing.threshold(captureMatrix, thresh);
       ImageProcessing.invert(captureMatrix);
 
       matrix = doOCR(captureMatrix, matrixBox);
-      if (matrix != null && Utils.isGridUniform(matrix.values))
+      if (matrix != null && matrix.isGrid())
         // the OCR successfully found a well-formed grid
         break;
     }
@@ -308,7 +284,7 @@ public class Detector {
     ImageProcessing.threshold(captureSequences, SEQUENCES_THRESHOLD);
     ImageProcessing.invert(captureSequences);
 
-    OCRResult sequences = doOCR(captureSequences, sequencesBox);
+    OCRArray2D sequences = doOCR(captureSequences, sequencesBox);
     if (sequences == null)
       return null;
 

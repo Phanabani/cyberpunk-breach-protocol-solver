@@ -6,78 +6,7 @@ import static com.github.dakusui.combinatoradix.Utils.nCk;
 
 import java.util.*;
 
-class GridNode {
-  public int x;
-  public int y;
-  public Integer value;
-
-  public GridNode(int x, int y, Integer value) {
-    this.x = x;
-    this.y = y;
-    this.value = value;
-  }
-
-  public String toString() {
-    return String.format("<GridNode %02X (%d, %d)>", value, x, y);
-  }
-}
-
-class Grid2D {
-
-  private GridNode[][] data;
-  private int width;
-  private int height;
-
-  public Grid2D(Integer[][] data) {
-    width = data[0].length;
-    height = data.length;
-    this.data = new GridNode[height][];
-
-    int lastRowLen = width;
-    for (int y=0; y<height; y++) {
-      assert data[y].length == lastRowLen : "Rows must be of equal length";
-      lastRowLen = data[y].length;
-
-      this.data[y] = new GridNode[width];
-      for (int x=0; x<data[y].length; x++) {
-        this.data[y][x] = new GridNode(x, y, data[y][x]);
-      }
-    }
-  }
-
-  public GridNode get(int x, int y) throws IndexOutOfBoundsException {
-    return data[y][x];
-  }
-
-  public int getWidth() {
-    return width;
-  }
-
-  public int getHeight() {
-    return height;
-  }
-
-  public GridNode findInRow(int row, int value, int start) {
-    for (int i=start; i<width; i++) {
-      GridNode node = get(i, row);
-      if (node.value.equals(value))
-        return node;
-    }
-    return null;
-  }
-
-  public GridNode findInColumn(int col, int value, int start) {
-    for (int i=start; i<height; i++) {
-      GridNode node = get(col, i);
-      if (node.value.equals(value))
-        return node;
-    }
-    return null;
-  }
-
-}
-
-class SequencePermutator implements Iterable<List<List<Integer>>> {
+class SequencePermutator implements Iterable<List<List<OCRArrayNode>>> {
   /*
    * We're assuming that the sequences are ordered in ascending priority
    *
@@ -99,19 +28,22 @@ class SequencePermutator implements Iterable<List<List<Integer>>> {
    * 4
    */
 
-  private List<? extends List<Integer>> sequences;
+  private List<List<OCRArrayNode>> sequences;
   private int maxBufferSize;
-  private List<List<List<Integer>>> permutations;
+  private List<List<List<OCRArrayNode>>> permutations;
 
-  public SequencePermutator(List<? extends List<Integer>> sequences, int maxBufferSize) {
-    Collections.reverse(sequences);
-    this.sequences = sequences;
+  public SequencePermutator(OCRArray2D sequences, int maxBufferSize) {
+    int seqCount = sequences.getHeight();
+    this.sequences = new ArrayList<>(seqCount);
+    for (int y = seqCount - 1; y >= 0; y--) {
+      this.sequences.add(sequences.getRow(y));
+    }
     this.maxBufferSize = maxBufferSize;
     generatePermutations();
   }
 
   @Override
-  public Iterator<List<List<Integer>>> iterator() {
+  public Iterator<List<List<OCRArrayNode>>> iterator() {
     return permutations.iterator();
   }
 
@@ -133,9 +65,9 @@ class SequencePermutator implements Iterable<List<List<Integer>>> {
 
   private void generatePermutations() {
     int total = sequences.size();
-    Combinator<List<Integer>> combinator;
-    Permutator<List<Integer>> permutator;
-    List<List<List<Integer>>> permutations = new ArrayList<>();
+    Combinator<List<OCRArrayNode>> combinator;
+    Permutator<List<OCRArrayNode>> permutator;
+    List<List<List<OCRArrayNode>>> permutations = new ArrayList<>();
     int[] startPositions = new int[total];
 
     for (int element=0; element<total; element++) {
@@ -157,7 +89,7 @@ class SequencePermutator implements Iterable<List<List<Integer>>> {
           // Iterate through each combination with this element in the first position
           permutator = new Permutator<>(combinator.get(i), select);
 
-          for (List<List<Integer>> permutation : permutator) {
+          for (List<List<OCRArrayNode>> permutation : permutator) {
             // Iterate through each permutation of this combination
             permutations.add(permutation);
           }
@@ -170,35 +102,35 @@ class SequencePermutator implements Iterable<List<List<Integer>>> {
 
 public class Solver {
 
-  private Grid2D data = null;
+  private OCRArray2D matrix = null;
   private SequencePermutator sequencePermutator = null;
   private int bufferSize = -1;
-  private ArrayList<GridNode> solution = null;
+  private ArrayList<OCRArrayNode> solution = null;
 
   public Solver() {}
 
-  public Solver(Integer[][] data, List<List<Integer>> sequences, int bufferSize) {
-    setAll(data, sequences, bufferSize);
+  public Solver(DetectionResult detection) {
+    setAll(detection);
   }
 
-  public void setAll(Integer[][] data, List<? extends List<Integer>> sequences, int bufferSize) {
-    this.data = new Grid2D(data);
-    this.sequencePermutator = new SequencePermutator(sequences, bufferSize);
-    this.bufferSize = bufferSize;
+  public void setAll(DetectionResult detection) {
+    this.matrix = detection.matrix;
+    this.sequencePermutator = new SequencePermutator(detection.sequences, bufferSize);
+    this.bufferSize = detection.bufferSize;
     solution = null;
   }
 
-  public ArrayList<GridNode> getSolution() {
+  public ArrayList<OCRArrayNode> getSolution() {
     return solution;
   }
 
   public void solve() {
-    if (data == null || sequencePermutator == null || bufferSize == -1)
+    if (matrix == null || sequencePermutator == null || bufferSize == -1)
       return;
     solution = null;
-    ArrayDeque<GridNode> stack = new ArrayDeque<>(bufferSize);
+    ArrayDeque<OCRArrayNode> stack = new ArrayDeque<>(bufferSize);
 
-    for (List<List<Integer>> sequences : sequencePermutator) {
+    for (List<List<OCRArrayNode>> sequences : sequencePermutator) {
       if (solveRecursive(stack, sequences)) {
         solution = new ArrayList<>(stack);
         break;
@@ -206,14 +138,14 @@ public class Solver {
     }
   }
 
-  private static int overlapSize(List<? extends List<Integer>> sequences, int secondSeqIndex) {
+  private static int overlapSize(List<? extends List<OCRArrayNode>> sequences, int secondSeqIndex) {
     if (secondSeqIndex == 0)
       return 0;
-    List<Integer> seq1 = sequences.get(secondSeqIndex - 1);
-    List<Integer> seq2 = sequences.get(secondSeqIndex);
+    List<OCRArrayNode> seq1 = sequences.get(secondSeqIndex - 1);
+    List<OCRArrayNode> seq2 = sequences.get(secondSeqIndex);
 
     int overlap = 0;
-    for (Integer value : seq1) {
+    for (OCRArrayNode value : seq1) {
       if (overlap == seq2.size())
         // We have another value in seq1 but we're at the end of seq2; try again!
         overlap = 0;
@@ -231,21 +163,21 @@ public class Solver {
     return overlap;
   }
 
-  private boolean solveRecursive(Deque<GridNode> stack, List<? extends List<Integer>> sequences) {
+  private boolean solveRecursive(Deque<OCRArrayNode> stack, List<? extends List<OCRArrayNode>> sequences) {
     return solveRecursive(stack, sequences, 0, 0, 0, null);
   }
 
   private boolean solveRecursive(
-      Deque<GridNode> deque, List<? extends List<Integer>> sequences,
-      int bufferIndex, int seqIndex, int seqValueIndex, GridNode lastNode
+      Deque<OCRArrayNode> deque, List<? extends List<OCRArrayNode>> sequences,
+      int bufferIndex, int seqIndex, int seqValueIndex, OCRArrayNode lastNode
   ) {
     boolean solved;
-    int width = data.getWidth();
-    int height = data.getHeight();
+    int width = matrix.getWidth();
+    int height = matrix.getHeight();
     boolean horizontal = bufferIndex % 2 == 0;
     if (lastNode == null)
-      lastNode = new GridNode(0, 0, 0);
-    List<Integer> seq = sequences.get(seqIndex);
+      lastNode = new OCRArrayNode(0, 0, 0, null);
+    List<OCRArrayNode> seq = sequences.get(seqIndex);
 
     while (seqValueIndex == seq.size()) {
       // We're at the end of this sequence; move to the next.
@@ -268,13 +200,13 @@ public class Solver {
       return false;
 
     for (
-        GridNode node = horizontal
-            ? data.findInRow(lastNode.y, seq.get(seqValueIndex), 0)
-            : data.findInColumn(lastNode.x, seq.get(seqValueIndex), 0);
+        OCRArrayNode node = horizontal
+            ? matrix.findInRow(lastNode.y, seq.get(seqValueIndex), 0)
+            : matrix.findInColumn(lastNode.x, seq.get(seqValueIndex), 0);
         node != null;
         node = horizontal
-            ? data.findInRow(lastNode.y, seq.get(seqValueIndex), node.x + 1)
-            : data.findInColumn(lastNode.x, seq.get(seqValueIndex), node.y + 1)
+            ? matrix.findInRow(lastNode.y, seq.get(seqValueIndex), node.x + 1)
+            : matrix.findInColumn(lastNode.x, seq.get(seqValueIndex), node.y + 1)
     ) {
       // Iterate through all instances of value in this row or col
       if (deque.contains(node))
@@ -299,13 +231,13 @@ public class Solver {
       // Do NOT increment seqValueIndex because we didn't actually find the
       // value here
       for (
-          GridNode node = horizontal
-              ? data.get(0, lastNode.y)
-              : data.get(lastNode.x, 0);
+          OCRArrayNode node = horizontal
+              ? matrix.get(0, lastNode.y)
+              : matrix.get(lastNode.x, 0);
           horizontal ? node.x < width - 1 : node.y < height - 1;
           node = horizontal
-              ? data.get(node.x + 1, lastNode.y)
-              : data.get(lastNode.x, node.y + 1)
+              ? matrix.get(node.x + 1, lastNode.y)
+              : matrix.get(lastNode.x, node.y + 1)
       ) {
         // Try every row/column to get to the next required value
         if (bufferIndex != 0 && node == lastNode)
@@ -331,21 +263,21 @@ public class Solver {
       return;
     }
 
-    for (GridNode s : solution) {
+    for (OCRArrayNode s : solution) {
       System.out.println(String.format("%H (%d, %d)", s.value, s.x, s.y));
     }
 
-    ArrayList<GridNode> solutionSorted = new ArrayList<>(solution);
-    solutionSorted.sort((GridNode a, GridNode b) -> {
+    ArrayList<OCRArrayNode> solutionSorted = new ArrayList<>(solution);
+    solutionSorted.sort((OCRArrayNode a, OCRArrayNode b) -> {
       if (a.y != b.y)
         return Integer.compare(a.y, b.y);
       return Integer.compare(a.x, b.x);
     });
 
     int nextIdx = 0;
-    GridNode next = solutionSorted.get(0);
-    int width = data.getWidth();
-    int height = data.getHeight();
+    OCRArrayNode next = solutionSorted.get(0);
+    int width = matrix.getWidth();
+    int height = matrix.getHeight();
     for (int y=0; y<height; y++) {
       for (int x=0; x<width; x++) {
         if (next != null && next.x == x && next.y == y) {

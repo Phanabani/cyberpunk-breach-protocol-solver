@@ -10,8 +10,8 @@ import org.slf4j.LoggerFactory;
 import java.awt.AWTException;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.logging.LogManager;
 
 public class Main implements NativeKeyListener {
@@ -72,8 +72,6 @@ public class Main implements NativeKeyListener {
   }
 
   public void runSuite() {
-    StringBuilder sb;
-
     overlay.clearSolution();
     try {
       Thread.sleep(100);
@@ -88,54 +86,27 @@ public class Main implements NativeKeyListener {
       return;
     }
 
-    if (logger.isDebugEnabled()) {
-      sb = new StringBuilder();
-      for (ArrayList<Integer> row : detection.matrix.values) {
-        for (Integer cell : row) {
-          sb.append(String.format("%02X ", cell));
-        }
-        sb.append("\n");
-      }
-      logger.debug("Matrix:\n{}", sb);
+    logger.debug("Matrix:\n{}", detection.matrix);
+    logger.debug("Sequences:\n{}", detection.sequences);
+    logger.debug("Buffer size: {}", detection.bufferSize);
 
-      sb = new StringBuilder();
-      for (ArrayList<Integer> row : detection.sequences.values) {
-        for (Integer i : row) {
-          sb.append(String.format("%02X ", i));
-        }
-        sb.append("\n");
-      }
-      logger.debug("Sequences:\n{}", sb);
-
-      logger.debug("Buffer size: {}", detection.bufferSize);
-    }
-
-    Integer[][] matrixArr = Utils.tryGet2DSubarray(detection.matrix.values);
-    if (matrixArr == null) {
-      overlay.clearSolution();
-      return;
-    }
-
-    solver.setAll(matrixArr, detection.sequences.values, detection.bufferSize);
+    solver.setAll(detection);
     solver.solve();
-    ArrayList<GridNode> solution = solver.getSolution();
+    List<OCRArrayNode> solution = solver.getSolution();
     if (solution == null) {
       overlay.clearSolution();
       return;
     }
 
     if (logger.isDebugEnabled()) {
-      sb = new StringBuilder();
-      for (GridNode s : solver.getSolution()) {
-        sb.append(String.format("%02X (%d, %d)\n", s.value, s.x, s.y));
+      StringBuilder sb = new StringBuilder();
+      for (OCRArrayNode node : solution) {
+        sb.append(String.format("\n(%d, %d) %02X", node.x, node.y, node.value));
       }
-      sb.append("\n");
-      logger.debug("Solution:\n{}", sb);
+      logger.debug("Solution:{}", sb);
     }
 
-    int matrixWidth = matrixArr[0].length;
-    overlay.setRegions(detection.matrix.regions);
-    overlay.setSolution(solution, matrixWidth);
+    overlay.setSolution(solution);
 
     System.gc();
   }

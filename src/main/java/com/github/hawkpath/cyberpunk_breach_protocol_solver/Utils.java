@@ -9,7 +9,6 @@ import java.io.IOException;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
@@ -55,52 +54,6 @@ public class Utils {
     }
 
     return map;
-  }
-
-  public static boolean isGridUniform(ArrayList<ArrayList<Integer>> list) {
-    if (list.size() <= 1)
-      return true;
-
-    int rowSize = list.get(0).size();
-    for (int i=1; i<list.size(); i++) {
-      if (list.get(i).size() != rowSize)
-        return false;
-    }
-
-    return true;
-  }
-
-  public static Integer[][] toJaggedArray(ArrayList<ArrayList<Integer>> list) {
-    if (list.size() == 0)
-      return null;
-
-    Integer[][] outArr = new Integer[list.size()][];
-    for (int i=0; i<list.size(); i++) {
-      outArr[i] = list.get(i).toArray(new Integer[0]);
-    }
-
-    return outArr;
-  }
-
-  public static Integer[][] tryGet2DSubarray(ArrayList<ArrayList<Integer>> list) {
-    if (list.size() == 0)
-      return null;
-
-    int rowLen = list.get(0).size();
-    int sameSizedRows = 0;
-    for ( ; sameSizedRows<list.size(); sameSizedRows++) {
-      if (list.get(sameSizedRows).size() != rowLen)
-        break;
-    }
-    if (list.size() - sameSizedRows > 2)
-      return null;
-
-    Integer[][] outArr = new Integer[sameSizedRows][];
-    for (int i=0; i<sameSizedRows; i++) {
-      outArr[i] = list.get(i).toArray(new Integer[0]);
-    }
-
-    return outArr;
   }
 
   public static Color ColorRGBLerp(Color colorA, Color colorB, float t) {
