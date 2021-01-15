@@ -6,7 +6,7 @@
 
     <groupId>com.github.hawkpath</groupId>
     <artifactId>cyberpunk_breach_protocol_solver</artifactId>
-    <version>1.0</version>
+    <version>1.0-rc.1</version>
     <name>Cyberpunk Breach Protocol Solver</name>
     <description>An application that solves and displays the solution for the breach protocol
         minigame in Cyberpunk 2077.</description>
@@ -22,6 +22,8 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <maven.compiler.source>1.8</maven.compiler.source>
         <maven.compiler.target>1.8</maven.compiler.target>
+        <builtBy>Hawkpath</builtBy>
+        <mainClass>com.github.hawkpath.cyberpunk_breach_solver.Main</mainClass>
     </properties>
 
     <dependencies>
@@ -77,28 +79,40 @@
             </plugin>
 
             <plugin>
-                <artifactId>maven-assembly-plugin</artifactId>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-shade-plugin</artifactId>
+                <version>3.2.4</version>
                 <executions>
-
                     <execution>
-                        <id>make-jar</id>
                         <phase>package</phase>
                         <goals>
-                            <goal>single</goal>
+                            <goal>shade</goal>
                         </goals>
                         <configuration>
-                            <archive>
-                                <manifest>
-                                    <mainClass>com.github.hawkpath.cyberpunk_breach_solver.Main</mainClass>
-                                </manifest>
-                            </archive>
-                            <descriptorRefs>
-                                <descriptorRef>jar-with-dependencies</descriptorRef>
-                            </descriptorRefs>
-                            <appendAssemblyId>false</appendAssemblyId>
+                            <filters>
+                                <filter>
+                                    <artifact>net.sourceforge.tess4j:tess4j</artifact>
+                                    <excludes>
+                                        <exclude>tessdata/**/*</exclude>
+                                    </excludes>
+                                </filter>
+                            </filters>
+                            <transformers>
+                                <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+                                    <manifestEntries>
+                                        <Main-Class>${mainClass}</Main-Class>
+                                        <Built-By>${builtBy}</Built-By>
+                                    </manifestEntries>
+                                </transformer>
+                            </transformers>
                         </configuration>
                     </execution>
+                </executions>
+            </plugin>
 
+            <plugin>
+                <artifactId>maven-assembly-plugin</artifactId>
+                <executions>
                     <execution>
                         <id>make-zip</id>
                         <phase>package</phase>
@@ -110,7 +124,6 @@
                             <finalName>${project.name}-${project.version}</finalName>
                         </configuration>
                     </execution>
-
                 </executions>
             </plugin>
 
