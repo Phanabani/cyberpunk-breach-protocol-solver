@@ -82,7 +82,7 @@ public class Detector {
   private static final Dimension basisDim = new Dimension(2560, 1440);
   private static final Point matrixFindBoxStart = new Point(655, 465);
   private static final Point sequencesFindBoxStart = new Point(1484, 450);
-  private static final Point bufferFindBoxStart = new Point(1160, 246);
+  private static final Point bufferFindBoxStart = new Point(1300, 250);
 
   private ScreenScaler screenScaler;
   private Tesseract tess;
